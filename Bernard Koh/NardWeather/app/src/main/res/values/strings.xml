@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">NardWeather</string>
+    <string name="change_city"> Change City</string>
+
+    <string name="open_weather_map_api_key">1bab5a3cc4e7423879bea7b2dea70edc</string>
+
+
+</resources>
