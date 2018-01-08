@@ -23,16 +23,18 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/city_field"
         android:gravity="center_horizontal"
-        tools:text="Last Updated: Jan 5, 2018"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textSize="13sp" />
+        android:textSize="13sp"
+        tools:text="Last Updated: Jan 5, 2018 \n 7:00PM" />
 
     <TextView
         android:id="@+id/weather_icon"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
         android:gravity="center_horizontal"
+        tools:text="&#xf010;"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:textSize="120sp" />
 

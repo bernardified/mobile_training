@@ -1,40 +1,14 @@
 package com.shopback.nardweather;
 
-/**
- * Created by bernardkoh on 5/1/18.
- */
+class WeatherResults {
+    private final String city, lastUpdated, details, temperature, weatherIcon;
 
-public class WeatherResults {
-    private String city, lastUpdated, details, temperature;
-    private long sunrise, sunset;
-    private int weatherIcon;
-
-    void setCity(String city){
+    WeatherResults(String city, String lastUpdated, String details, String temperature, String weatherIcon) {
         this.city = city;
-    }
-
-    void setLastUpdated(String lastUpdated) {
         this.lastUpdated = lastUpdated;
-    }
-
-    void setDetails(String details) {
         this.details = details;
-    }
-
-    void setTemperature(String temperature) {
         this.temperature = temperature;
-    }
-
-    void setWeatherIcon(int weatherIcon) {
         this.weatherIcon = weatherIcon;
-    }
-
-    void setSunrise(long sunrise) {
-        this.sunrise = sunrise;
-    }
-
-    void setSunset(long sunset) {
-        this.sunset = sunset;
     }
 
     String getCity() {
@@ -51,15 +25,7 @@ public class WeatherResults {
         return temperature;
     }
 
-    int getWeatherIcon() {
+    String getWeatherIcon() {
         return weatherIcon;
-    }
-
-    long getSunrise() {
-        return sunrise;
-    }
-
-    long getSunset() {
-        return sunset;
     }
 }
