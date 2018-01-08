@@ -15,14 +15,12 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONObject;
-
 public class WeatherActivity extends AppCompatActivity {
 
     private static final String DEFAULT_CITY = "Singapore,SG";
     private static final String WEATHER_FONT_PATH = "fonts/weathericons_regular_webfont.ttf";
 
-    Handler handler;
+    Handler postToUiHandler;
     TextView cityField, lastUpdatedField, weatherIcon, detailsField, temperatureField;
     Typeface weatherFont;
 
@@ -44,7 +42,7 @@ public class WeatherActivity extends AppCompatActivity {
             updateWeather(DEFAULT_CITY);
         }
 
-        handler = new Handler();
+        postToUiHandler = new Handler();
     }
 
     @Override
@@ -53,6 +51,7 @@ public class WeatherActivity extends AppCompatActivity {
         return true;
     }
 
+    /*Invokes input Alert Dialog when change city is selected*/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.change_city) {
@@ -61,6 +60,7 @@ public class WeatherActivity extends AppCompatActivity {
         return false;
     }
 
+    /*shows the input Alert Dialog with edit text and two buttons for user to enter city name*/
     private void showInputDialog(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Search by City");
@@ -90,31 +90,31 @@ public class WeatherActivity extends AppCompatActivity {
         updateWeather(city);
     }
 
-    /*Create a new thread to retrieve weather information in JSON
-    * Parse JSON data and calls method to update UI
+    /*Create a new thread to retrieve weather information
+    * and posts to UI thread to update UI
     * Error message shown when there is an invalid entry
     **/
     private void updateWeather(final String city) {
         new Thread() {
             public void run() {
-                final JSONObject data = FetchWeather.getJSON(WeatherActivity.this,city);
-                if(data == null) {
+                final WeatherResults results = FetchWeather.getWeather(WeatherActivity.this,city);
+
+                if(results == null) {
                     Log.d("updateWeather", "data is null");
-                    handler.post(new Runnable(){
-                       public void run() {
-                           Toast.makeText(WeatherActivity.this, "Unable to find city!", Toast.LENGTH_LONG)
-                                   .show();
-                       }
-                    });
+                    Runnable noData = new Runnable(){
+                        public void run() {
+                            Toast.makeText(WeatherActivity.this, "Unable to find city!", Toast.LENGTH_LONG)
+                                    .show();
+                        }};
+                    postToUiHandler.post(noData);
 
                 } else {
                     Log.d("updateWeather", "data parsing");
-                    handler.post(new Runnable(){
+                    Runnable parsedData = new Runnable() {
                         public void run() {
-                           final WeatherResults results = FetchWeather.parseResult(data);
-                           updateUI(results);
-                        }
-                    });
+                            updateUI(results);
+                        }};
+                    postToUiHandler.post(parsedData);
                 }
             }
 
