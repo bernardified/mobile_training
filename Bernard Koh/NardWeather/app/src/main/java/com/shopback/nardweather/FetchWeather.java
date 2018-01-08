@@ -15,7 +15,7 @@ import java.util.Locale;
 
 class FetchWeather {
     //retrieve weather info from openweathermap
-    static WeatherResults getWeather(Context context, String city) {
+    static JSONObject getJSON(Context context, String city) {
         HttpURLConnection connection;
         String OPEN_WEATHER_MAP_API_CALL =
                 "http://api.openweathermap.org/data/2.5/weather?q=%s&units=metric&appid=%s";
@@ -45,8 +45,8 @@ class FetchWeather {
                 return null;
             }
             Log.d("Get-Response", responseString.toString());
-            WeatherResults results = parseResult(data);
-            return results;
+
+            return data;
 
         } catch(Exception e){
             return null;
@@ -54,7 +54,7 @@ class FetchWeather {
     }
 
     //parse results
-    private static WeatherResults parseResult(JSONObject data) {
+    static WeatherResults parseResult(JSONObject data) {
         WeatherResults results;
         try {
             JSONObject detailsInfo, main;

@@ -15,34 +15,48 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 public class WeatherActivity extends AppCompatActivity {
 
     private static final String DEFAULT_CITY = "Singapore,SG";
     private static final String WEATHER_FONT_PATH = "fonts/weathericons_regular_webfont.ttf";
 
     Handler postToUiHandler;
-    TextView cityField, lastUpdatedField, weatherIcon, detailsField, temperatureField;
+    TextView cityField, lastUpdatedField, weatherIcon, temperatureField,
+            cityFieldTwo, lastUpdatedFieldTwo, weatherIconTwo, temperatureFieldTwo,
+            cityFieldThree, lastUpdatedFieldThree, weatherIconThree, temperatureFieldThree;
+
     Typeface weatherFont;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_weather);
+        setContentView(R.layout.activity_weather_multi);
 
         weatherFont = Typeface.createFromAsset(this.getAssets(), WEATHER_FONT_PATH);
 
         cityField = findViewById(R.id.city_field);
         lastUpdatedField = findViewById(R.id.updated_field);
         weatherIcon = findViewById(R.id.weather_icon);
-        detailsField = findViewById(R.id.details_field);
         temperatureField = findViewById(R.id.current_temperature_field);
         weatherIcon.setTypeface(weatherFont);
+
+        cityFieldTwo = findViewById(R.id.city_field_2);
+        lastUpdatedFieldTwo = findViewById(R.id.updated_field_2);
+        weatherIconTwo = findViewById(R.id.weather_icon_2);
+        temperatureFieldTwo = findViewById(R.id.current_temperature_field_2);
+        weatherIconTwo.setTypeface(weatherFont);
+
+        cityFieldThree = findViewById(R.id.city_field_3);
+        lastUpdatedFieldThree = findViewById(R.id.updated_field_3);
+        weatherIconThree = findViewById(R.id.weather_icon_3);
+        temperatureFieldThree = findViewById(R.id.current_temperature_field_3);
+        weatherIconThree.setTypeface(weatherFont);
 
         if (savedInstanceState == null) {
             updateWeather(DEFAULT_CITY);
         }
-
-        postToUiHandler = new Handler();
     }
 
     @Override
@@ -97,7 +111,8 @@ public class WeatherActivity extends AppCompatActivity {
     private void updateWeather(final String city) {
         new Thread() {
             public void run() {
-                final WeatherResults results = FetchWeather.getWeather(WeatherActivity.this,city);
+                final JSONObject data = doFetchWeather(city);
+                final WeatherResults results = FetchWeather.parseResult(data);
 
                 if(results == null) {
                     Log.d("updateWeather", "data is null");
@@ -126,7 +141,6 @@ public class WeatherActivity extends AppCompatActivity {
         Log.d("updateUI", "updating UI");
         cityField.setText(data.getCity());
         lastUpdatedField.setText(data.getLastUpdated());
-        detailsField.setText(data.getDetails());
         temperatureField.setText(data.getTemperature());
 
         //get the id of the respective weather icon based on the weather code
@@ -147,6 +161,20 @@ public class WeatherActivity extends AppCompatActivity {
             weatherIcon.setText(weather);
         }
 
+    }
+
+    private JSONObject doFetchWeather(String city) {
+        WeatherManager.getInstance().getFetchWeatherJobs().execute(new Runnable() {
+            @Override
+            public void run() {
+                return FetchWeather.getJSON(WeatherActivity.this,city);
+            }
+        });
+        return null;
+    }
+
+    private void doParseWeather(JSONObject data) {
+        WeatherManager.getInstance().getParseWeatherJobs().execute(new);
     }
 
 }
