@@ -14,12 +14,28 @@ import java.util.Date;
 import java.util.Locale;
 
 class FetchWeather {
-    //retrieve weather info from openweathermap
-    static JSONObject getJSON(Context context, String city) {
+
+    private static int counter = 0;
+    private static final String EMPTY_STRING="";
+
+    /**Retrieves city's weather information from openweathermap.org. The JSONObject is null if the
+     *input city is empty. Invalid city name will throw an exception
+     *
+     * @param context: Context
+     * @param city: String
+     * @return WeatherResults
+     */
+    static WeatherResults getWeather(Context context, String city) {
         HttpURLConnection connection;
+        WeatherResults results;
         String OPEN_WEATHER_MAP_API_CALL =
                 "http://api.openweathermap.org/data/2.5/weather?q=%s&units=metric&appid=%s";
         try{
+            /*empty string where user did not enter any input*/
+            if(city.equals("")) {
+                return parseResult(null);
+            }
+
             String fullString = String.format(OPEN_WEATHER_MAP_API_CALL, city,
                     context.getString(R.string.open_weather_map_api_key));
             URL url = new URL(fullString);
@@ -46,17 +62,29 @@ class FetchWeather {
             }
             Log.d("Get-Response", responseString.toString());
 
-            return data;
+            return parseResult(data);
 
         } catch(Exception e){
+            Log.d("Get-Response", "error");
             return null;
         }
     }
 
-    //parse results
-    static WeatherResults parseResult(JSONObject data) {
-        WeatherResults results;
+    /**parse results from JSONObject and store in WeatherResults. WeatherResults attributes will be empty string
+     * if JSONObject is null
+     *
+     * @param data: JSONObject
+     * @return WeatherResults. Exception is called if any of the weather info cannot be retrieved
+     */
+    private static WeatherResults parseResult(JSONObject data) {
+        WeatherResults results ;
         try {
+            //no user input
+            if(data == null) {
+                return new WeatherResults(EMPTY_STRING, EMPTY_STRING, EMPTY_STRING,
+                        EMPTY_STRING, EMPTY_STRING, counter++);
+            }
+
             JSONObject detailsInfo, main;
             String city, lastUpdated, details, temperature, weatherIcon;
             DateFormat df;
@@ -79,7 +107,10 @@ class FetchWeather {
                     data.getJSONObject("sys").getLong("sunrise") * 1000,
                     data.getJSONObject("sys").getLong("sunset") * 1000);
 
-            results = new WeatherResults(city,lastUpdated,details,temperature, weatherIcon);
+            /*create the WeatherResults object from the retrieved information and increment the
+            number of WeatherResults object created by 1
+             */
+            results = new WeatherResults(city,lastUpdated,details,temperature, weatherIcon, counter++);
 
         } catch (Exception e) {
             results = null;
@@ -88,7 +119,14 @@ class FetchWeather {
         return results;
     }
 
-    //convert input weather icon id to string.xml format
+    /**Adds string.xml prefix to the weather Id based on the current time
+     * retreived from openweathermap.org
+     *
+     * @param weatherId: Integer
+     * @param sunrise: long
+     * @param sunset: long
+     * @return String
+     */
     private static String convertWeatherIcon (Integer weatherId, long sunrise, long sunset) {
         final String DAY_PREFIX = "wi_owm_day_";
         final String NIGHT_PREFIX = "wi_owm_night_";

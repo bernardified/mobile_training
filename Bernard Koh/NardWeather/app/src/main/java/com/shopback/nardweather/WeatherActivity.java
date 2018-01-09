@@ -12,16 +12,18 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONObject;
-
 public class WeatherActivity extends AppCompatActivity {
 
-    private static final String DEFAULT_CITY = "Singapore,SG";
+    private static final String DEFAULT_CITY_SG = "Singapore,SG";
+    private static final String DEFAULT_CITY_MY = "Johor Bahru, MY";
+    private static final String DEFAULT_CITY_ID = "Jakarta, ID";
     private static final String WEATHER_FONT_PATH = "fonts/weathericons_regular_webfont.ttf";
 
+    WeatherManager weatherManager;
     Handler postToUiHandler;
     TextView cityField, lastUpdatedField, weatherIcon, temperatureField,
             cityFieldTwo, lastUpdatedFieldTwo, weatherIconTwo, temperatureFieldTwo,
@@ -33,6 +35,9 @@ public class WeatherActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather_multi);
+
+        weatherManager = WeatherManager.getInstance();
+        postToUiHandler = weatherManager.getMainThreadHandler();
 
         weatherFont = Typeface.createFromAsset(this.getAssets(), WEATHER_FONT_PATH);
 
@@ -55,8 +60,9 @@ public class WeatherActivity extends AppCompatActivity {
         weatherIconThree.setTypeface(weatherFont);
 
         if (savedInstanceState == null) {
-            updateWeather(DEFAULT_CITY);
+            updateWeather(DEFAULT_CITY_SG, DEFAULT_CITY_MY, DEFAULT_CITY_ID);
         }
+
     }
 
     @Override
@@ -65,7 +71,9 @@ public class WeatherActivity extends AppCompatActivity {
         return true;
     }
 
-    /*Invokes input Alert Dialog when change city is selected*/
+    /**
+     * Invokes input Alert Dialog when change city is selected
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.change_city) {
@@ -74,21 +82,43 @@ public class WeatherActivity extends AppCompatActivity {
         return false;
     }
 
-    /*shows the input Alert Dialog with edit text and two buttons for user to enter city name*/
-    private void showInputDialog(){
+    /**
+     * shows the input Alert Dialog with 3 edit text field  and two buttons for user to enter city name
+     */
+    private void showInputDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+
         builder.setTitle("Search by City");
-        builder.setMessage("Please enter city:");
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        input.setHint(R.string.city_name_example);
-        input.setHintTextColor(Color.GRAY);
-        builder.setView(input);
+        builder.setMessage("Please enter cities:");
+
+        final EditText inputOne = new EditText(this);
+        inputOne.setInputType(InputType.TYPE_CLASS_TEXT);
+        inputOne.setHint(R.string.city_name_example);
+        inputOne.setHintTextColor(Color.GRAY);
+        layout.addView(inputOne);
+
+        final EditText inputTwo = new EditText(this);
+        inputTwo.setInputType(InputType.TYPE_CLASS_TEXT);
+        inputTwo.setHint(R.string.city_name_example_two);
+        inputTwo.setHintTextColor(Color.GRAY);
+        layout.addView(inputTwo);
+
+        final EditText inputThree = new EditText(this);
+        inputThree.setInputType(InputType.TYPE_CLASS_TEXT);
+        inputThree.setHint(R.string.city_name_example_three);
+        inputThree.setHintTextColor(Color.GRAY);
+        layout.addView(inputThree);
+
+        builder.setView(layout);
+
         builder.setPositiveButton(R.string.change_city_dialog_go, new DialogInterface.OnClickListener() {
             @Override
             //change city when Go Button pressed
             public void onClick(DialogInterface dialog, int id) {
-                changeCity(input.getText().toString());
+                updateWeather(inputOne.getText().toString(), inputTwo.getText().toString(),
+                        inputThree.getText().toString());
             }
         }).setNegativeButton(R.string.change_city_dialog_cancel, new DialogInterface.OnClickListener() {
             @Override
@@ -100,81 +130,128 @@ public class WeatherActivity extends AppCompatActivity {
         builder.show();
     }
 
-    public void changeCity(String city) {
-        updateWeather(city);
+    /**
+     * Fetches the weather info of the three input cities
+     *
+     * @param city1: String
+     * @param city2: String
+     * @param city3: String
+     */
+    private void updateWeather(final String city1, final String city2, final String city3) {
+        weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city1));
+        weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city2));
+        weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city3));
     }
 
-    /*Create a new thread to retrieve weather information
-    * and posts to UI thread to update UI
-    * Error message shown when there is an invalid entry
-    **/
-    private void updateWeather(final String city) {
-        new Thread() {
-            public void run() {
-                final JSONObject data = doFetchWeather(city);
-                final WeatherResults results = FetchWeather.parseResult(data);
-
-                if(results == null) {
-                    Log.d("updateWeather", "data is null");
-                    Runnable noData = new Runnable(){
-                        public void run() {
-                            Toast.makeText(WeatherActivity.this, "Unable to find city!", Toast.LENGTH_LONG)
-                                    .show();
-                        }};
-                    postToUiHandler.post(noData);
-
-                } else {
-                    Log.d("updateWeather", "data parsing");
-                    Runnable parsedData = new Runnable() {
-                        public void run() {
-                            updateUI(results);
-                        }};
-                    postToUiHandler.post(parsedData);
-                }
-            }
-
-        }.start();
-    }
-
-    /*Dynamically retrieves respective weather icon from strings.xml and updates UI*/
+    /**
+     * Dynamically retrieves respective weather icon from strings.xml and updates UI into their respective views
+     *
+     * @param data: WeatherResults
+     */
     private void updateUI(WeatherResults data) {
-        Log.d("updateUI", "updating UI");
-        cityField.setText(data.getCity());
-        lastUpdatedField.setText(data.getLastUpdated());
-        temperatureField.setText(data.getTemperature());
+        int weatherIconIdentifier;
+        switch (data.getOrder()) {
+            case 0:
+                Log.d("updateUI", "updating UI 1");
+                cityField.setText(data.getCity());
+                lastUpdatedField.setText(data.getLastUpdated());
+                temperatureField.setText(data.getTemperature());
 
-        //get the id of the respective weather icon based on the weather code
-        int weatherIconIdentifier = getResources().getIdentifier(data.getWeatherIcon(),
-                "string", this.getPackageName());
+                //get the id of the respective weather icon based on the weather code
+                weatherIconIdentifier = getResources().getIdentifier(data.getWeatherIcon(),
+                        "string", this.getPackageName());
 
-        Log.d("updateUI", data.getWeatherIcon());
+                Log.d("updateUI", data.getWeatherIcon());
 
-        String weather;
-        if (weatherIconIdentifier != 0) {
-            weather = getString(weatherIconIdentifier);
-        } else {
-            Log.d("updateUI", "weatherIcon is null");
-            weather = null;
-        }
+                if (weatherIconIdentifier == 0) {
+                    weatherIcon.setText("");
+                } else {
+                    weatherIcon.setText(weatherIconIdentifier);
+                }
+                break;
 
-        if (weatherIcon != null) {
-            weatherIcon.setText(weather);
+            case 1:
+
+                Log.d("updateUI", "updating UI 2");
+                cityFieldTwo.setText(data.getCity());
+                lastUpdatedFieldTwo.setText(data.getLastUpdated());
+                temperatureFieldTwo.setText(data.getTemperature());
+
+                //get the id of the respective weather icon based on the weather code
+                weatherIconIdentifier = getResources().getIdentifier(data.getWeatherIcon(),
+                        "string", this.getPackageName());
+
+                Log.d("updateUI", data.getWeatherIcon());
+                if (weatherIconIdentifier == 0) {
+                    weatherIconTwo.setText("");
+                } else {
+                    weatherIconTwo.setText(weatherIconIdentifier);
+                }
+                break;
+
+            case 2:
+                Log.d("updateUI", "updating UI 3");
+                cityFieldThree.setText(data.getCity());
+                lastUpdatedFieldThree.setText(data.getLastUpdated());
+                temperatureFieldThree.setText(data.getTemperature());
+
+                //get the id of the respective weather icon based on the weather code
+                weatherIconIdentifier = getResources().getIdentifier(data.getWeatherIcon(),
+                        "string", this.getPackageName());
+
+                Log.d("updateUI", data.getWeatherIcon());
+                if (weatherIconIdentifier == 0) {
+                    weatherIconThree.setText("");
+                } else {
+                    weatherIconThree.setText(weatherIconIdentifier);
+                }
+                break;
         }
 
     }
 
-    private JSONObject doFetchWeather(String city) {
-        WeatherManager.getInstance().getFetchWeatherJobs().execute(new Runnable() {
+    /**
+     * Creates a Runnable object to fetch weather information and post the result to the main thread
+     * to update UI
+     *
+     * @param city: String
+     * @return Runnable
+     */
+    private Runnable getFetchWeatherRunnable(final String city) {
+        return new Runnable() {
+            WeatherResults results;
+
             @Override
             public void run() {
-                return FetchWeather.getJSON(WeatherActivity.this,city);
+                results = FetchWeather.getWeather(WeatherActivity.this, city);
+                postToUiHandler.post(getUiRunnable(results));
             }
-        });
-        return null;
+        };
     }
 
-    private void doParseWeather(JSONObject data) {
-        WeatherManager.getInstance().getParseWeatherJobs().execute(new);
-    }
+    /**
+     * Creates a Runnable object to update the UI fields based on the WeatherResults.
+     * Toast error message is shown if the city's weather information cannot be fetched
+     *
+     * @param results: WeatherResults
+     * @return Runnable
+     */
+    private Runnable getUiRunnable(final WeatherResults results) {
+        if (results == null) {
+            Log.d("updateWeather", "data is null");
+            return new Runnable() {
+                public void run() {
+                    Toast.makeText(WeatherActivity.this, "Unable to find city!", Toast.LENGTH_LONG)
+                            .show();
+                }
+            };
 
+        } else {
+            return new Runnable() {
+                public void run() {
+                    updateUI(results);
+                }
+            };
+        }
+    }
 }

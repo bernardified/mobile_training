@@ -4,6 +4,8 @@
     <string name="open_weather_map_api_key">1bab5a3cc4e7423879bea7b2dea70edc</string>
     <string name="city_not_found">City not found!</string>
     <string name="city_name_example">Eg. Beijing, CN</string>
+    <string name="city_name_example_two">Eg.Banda Aceh</string>
+    <string name="city_name_example_three">Eg. San Antonio, US</string>
 
     <string name="change_city_dialog_go">Go</string>
     <string name="change_city_dialog_cancel">Cancel</string>
