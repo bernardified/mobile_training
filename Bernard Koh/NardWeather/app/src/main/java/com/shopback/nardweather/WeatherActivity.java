@@ -61,7 +61,7 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     /*shows the input Alert Dialog with edit text and two buttons for user to enter city name*/
-    private void showInputDialog(){
+    private void showInputDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Search by City");
         builder.setMessage("Please enter city:");
@@ -74,7 +74,7 @@ public class WeatherActivity extends AppCompatActivity {
             @Override
             //change city when Go Button pressed
             public void onClick(DialogInterface dialog, int id) {
-                changeCity(input.getText().toString());
+                updateWeather(input.getText().toString());
             }
         }).setNegativeButton(R.string.change_city_dialog_cancel, new DialogInterface.OnClickListener() {
             @Override
@@ -86,36 +86,36 @@ public class WeatherActivity extends AppCompatActivity {
         builder.show();
     }
 
-    public void changeCity(String city) {
-        updateWeather(city);
-    }
-
-    /*Create a new thread to retrieve weather information
-    * and posts to UI thread to update UI
-    * Error message shown when there is an invalid entry
-    **/
+    /**
+     * Create a new thread to retrieve weather information
+     * and posts to UI thread to update UI
+     * Error message shown when there is an invalid entry
+     */
     private void updateWeather(final String city) {
         new Thread() {
             public void run() {
-                final WeatherResults results = FetchWeather.getWeather(WeatherActivity.this,city);
-
-                if(results == null) {
+                final WeatherResults results = FetchWeather.getWeather(WeatherActivity.this, city);
+                Runnable runData;
+                if (results == null) {
                     Log.d("updateWeather", "data is null");
-                    Runnable noData = new Runnable(){
+                    //display message that city cannot be found
+                    runData = new Runnable() {
                         public void run() {
                             Toast.makeText(WeatherActivity.this, "Unable to find city!", Toast.LENGTH_LONG)
                                     .show();
-                        }};
-                    postToUiHandler.post(noData);
+                        }
+                    };
+
 
                 } else {
-                    Log.d("updateWeather", "data parsing");
-                    Runnable parsedData = new Runnable() {
+                    //update UI with new weather information
+                    runData = new Runnable() {
                         public void run() {
                             updateUI(results);
-                        }};
-                    postToUiHandler.post(parsedData);
+                        }
+                    };
                 }
+                postToUiHandler.post(runData);
             }
 
         }.start();
@@ -135,16 +135,10 @@ public class WeatherActivity extends AppCompatActivity {
 
         Log.d("updateUI", data.getWeatherIcon());
 
-        String weather;
         if (weatherIconIdentifier != 0) {
-            weather = getString(weatherIconIdentifier);
+            weatherIcon.setText(weatherIconIdentifier);
         } else {
             Log.d("updateUI", "weatherIcon is null");
-            weather = null;
-        }
-
-        if (weatherIcon != null) {
-            weatherIcon.setText(weather);
         }
 
     }
