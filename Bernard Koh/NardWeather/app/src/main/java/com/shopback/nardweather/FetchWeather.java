@@ -27,7 +27,6 @@ class FetchWeather {
      */
     static WeatherResults getWeather(Context context, String city) {
         HttpURLConnection connection;
-        WeatherResults results;
         String OPEN_WEATHER_MAP_API_CALL =
                 "http://api.openweathermap.org/data/2.5/weather?q=%s&units=metric&appid=%s";
         try{
@@ -82,7 +81,7 @@ class FetchWeather {
             //no user input
             if(data == null) {
                 return new WeatherResults(EMPTY_STRING, EMPTY_STRING, EMPTY_STRING,
-                        EMPTY_STRING, EMPTY_STRING, counter++);
+                        EMPTY_STRING, EMPTY_STRING);
             }
 
             JSONObject detailsInfo, main;
@@ -110,7 +109,7 @@ class FetchWeather {
             /*create the WeatherResults object from the retrieved information and increment the
             number of WeatherResults object created by 1
              */
-            results = new WeatherResults(city,lastUpdated,details,temperature, weatherIcon, counter++);
+            results = new WeatherResults(city,lastUpdated,details,temperature, weatherIcon);
 
         } catch (Exception e) {
             results = null;

@@ -4,7 +4,6 @@ package com.shopback.nardweather;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -13,17 +12,12 @@ import java.util.concurrent.TimeUnit;
 class WeatherManager {
 
     private static final int KEEP_ALIVE_TIME = 1;
-    private static final int CORE_POOL_SIZE = 3;
-    private static final int MAXIMUM_POOL_SIZE = 3;
 
     private static int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
 
     private static final TimeUnit KEEP_ALIVE_TIME_UNIT;
 
     private final ThreadPoolExecutor fetchWeatherJobs;
-
-    //queue of Runnables for fetching weather information
-    private final BlockingQueue<Runnable> fetchWeatherQueue;
 
     private Handler handler;
 
@@ -39,8 +33,8 @@ class WeatherManager {
      *
      */
     private WeatherManager() {
-        fetchWeatherQueue = new LinkedBlockingQueue<Runnable>();
-        fetchWeatherJobs = new ThreadPoolExecutor(CORE_POOL_SIZE, MAXIMUM_POOL_SIZE,
+        BlockingQueue<Runnable> fetchWeatherQueue = new LinkedBlockingQueue<>();
+        fetchWeatherJobs = new ThreadPoolExecutor(NUMBER_OF_CORES, NUMBER_OF_CORES,
                 KEEP_ALIVE_TIME, KEEP_ALIVE_TIME_UNIT, fetchWeatherQueue);
 
         handler = new Handler(Looper.getMainLooper());

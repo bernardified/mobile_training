@@ -22,6 +22,7 @@ public class WeatherActivity extends AppCompatActivity {
     private static final String DEFAULT_CITY_MY = "Johor Bahru, MY";
     private static final String DEFAULT_CITY_ID = "Jakarta, ID";
     private static final String WEATHER_FONT_PATH = "fonts/weathericons_regular_webfont.ttf";
+    static int count = 0;
 
     WeatherManager weatherManager;
     Handler postToUiHandler;
@@ -150,7 +151,8 @@ public class WeatherActivity extends AppCompatActivity {
      */
     private void updateUI(WeatherResults data) {
         int weatherIconIdentifier;
-        switch (data.getOrder()) {
+        switch (getOrder()) {
+
             case 0:
                 Log.d("updateUI", "updating UI 1");
                 cityField.setText(data.getCity());
@@ -253,5 +255,9 @@ public class WeatherActivity extends AppCompatActivity {
                 }
             };
         }
+    }
+
+    private static Integer getOrder(){
+        return count++%3;
     }
 }
