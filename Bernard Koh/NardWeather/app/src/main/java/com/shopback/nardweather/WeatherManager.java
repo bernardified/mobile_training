@@ -1,9 +1,5 @@
 package com.shopback.nardweather;
 
-
-import android.os.Handler;
-import android.os.Looper;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -18,8 +14,6 @@ class WeatherManager {
     private static final TimeUnit KEEP_ALIVE_TIME_UNIT;
 
     private final ThreadPoolExecutor fetchWeatherJobs;
-
-    private Handler handler;
 
     //single instance of WeatherManager. Singleton pattern
     private static WeatherManager sInstance = null;
@@ -36,8 +30,6 @@ class WeatherManager {
         BlockingQueue<Runnable> fetchWeatherQueue = new LinkedBlockingQueue<>();
         fetchWeatherJobs = new ThreadPoolExecutor(NUMBER_OF_CORES, NUMBER_OF_CORES,
                 KEEP_ALIVE_TIME, KEEP_ALIVE_TIME_UNIT, fetchWeatherQueue);
-
-        handler = new Handler(Looper.getMainLooper());
     }
 
     /**Singleton Pattern
@@ -55,10 +47,6 @@ class WeatherManager {
 
     ThreadPoolExecutor getFetchWeatherJobs() {
         return fetchWeatherJobs;
-    }
-
-    Handler getMainThreadHandler() {
-        return handler;
     }
 
 }

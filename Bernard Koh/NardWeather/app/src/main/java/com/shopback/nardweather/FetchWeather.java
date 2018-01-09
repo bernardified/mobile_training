@@ -1,6 +1,8 @@
 package com.shopback.nardweather;
 
 import android.content.Context;
+import android.os.Bundle;
+import android.os.Message;
 import android.util.Log;
 
 import org.json.JSONObject;
@@ -8,6 +10,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.util.Date;
@@ -15,7 +18,6 @@ import java.util.Locale;
 
 class FetchWeather {
 
-    private static int counter = 0;
     private static final String EMPTY_STRING="";
 
     /**Retrieves city's weather information from openweathermap.org. The JSONObject is null if the
@@ -39,9 +41,9 @@ class FetchWeather {
                     context.getString(R.string.open_weather_map_api_key));
             URL url = new URL(fullString);
             connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(10000);
             connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("Accept-Charset", "utf-8,*");
 
             Log.d("Get-Request", url.toString());
 
@@ -63,10 +65,22 @@ class FetchWeather {
 
             return parseResult(data);
 
+        } catch (SocketTimeoutException e) {
+            Log.d("Get-Response", "Connection timeout");
+            Message errorMessage = new Message();
+            Bundle b = new Bundle();
+            b.putString("errorMessage","Connection timeout");
+            errorMessage.setData(b);
+            WeatherActivity.postToUiHandler.sendMessage(errorMessage);
         } catch(Exception e){
-            Log.d("Get-Response", "error");
-            return null;
+            Log.d("Get-Response", "City not found");
+            Message errorMessage = new Message();
+            Bundle b = new Bundle();
+            b.putString("errorMessage","City not found!");
+            errorMessage.setData(b);
+            WeatherActivity.postToUiHandler.sendMessage(errorMessage);
         }
+        return null;
     }
 
     /**parse results from JSONObject and store in WeatherResults. WeatherResults attributes will be empty string

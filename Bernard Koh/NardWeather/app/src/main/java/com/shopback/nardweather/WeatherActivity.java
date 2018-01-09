@@ -4,6 +4,8 @@ import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -22,10 +24,13 @@ public class WeatherActivity extends AppCompatActivity {
     private static final String DEFAULT_CITY_MY = "Johor Bahru, MY";
     private static final String DEFAULT_CITY_ID = "Jakarta, ID";
     private static final String WEATHER_FONT_PATH = "fonts/weathericons_regular_webfont.ttf";
-    static int count = 0;
+
+    private static int count = 0;
+    private static String errorMessage;
+
+    public static Handler postToUiHandler;
 
     WeatherManager weatherManager;
-    Handler postToUiHandler;
     TextView cityField, lastUpdatedField, weatherIcon, temperatureField,
             cityFieldTwo, lastUpdatedFieldTwo, weatherIconTwo, temperatureFieldTwo,
             cityFieldThree, lastUpdatedFieldThree, weatherIconThree, temperatureFieldThree;
@@ -38,7 +43,13 @@ public class WeatherActivity extends AppCompatActivity {
         setContentView(R.layout.activity_weather_multi);
 
         weatherManager = WeatherManager.getInstance();
-        postToUiHandler = weatherManager.getMainThreadHandler();
+        postToUiHandler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message inputMessage) {
+                Bundle b = inputMessage.getData();
+                errorMessage = b.getString("errorMessage");
+            }
+        };
 
         weatherFont = Typeface.createFromAsset(this.getAssets(), WEATHER_FONT_PATH);
 
@@ -243,7 +254,7 @@ public class WeatherActivity extends AppCompatActivity {
             Log.d("updateWeather", "data is null");
             return new Runnable() {
                 public void run() {
-                    Toast.makeText(WeatherActivity.this, "Unable to find city!", Toast.LENGTH_LONG)
+                    Toast.makeText(WeatherActivity.this, errorMessage, Toast.LENGTH_LONG)
                             .show();
                 }
             };
