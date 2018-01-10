@@ -4,7 +4,6 @@ import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Handler;
-import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -32,7 +31,7 @@ public class WeatherActivity extends AppCompatActivity {
     TextView cityField, lastUpdatedField, weatherIcon, temperatureField,
             cityFieldTwo, lastUpdatedFieldTwo, weatherIconTwo, temperatureFieldTwo,
             cityFieldThree, lastUpdatedFieldThree, weatherIconThree, temperatureFieldThree;
-    private static Menu mOptionsMenu;
+    public static boolean hasInternetConnection = true;
 
     Typeface weatherFont;
 
@@ -71,7 +70,6 @@ public class WeatherActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             updateWeather(DEFAULT_CITY_SG, DEFAULT_CITY_MY, DEFAULT_CITY_ID);
         }
-
     }
 
     @Override
@@ -94,8 +92,7 @@ public class WeatherActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        mOptionsMenu = menu;
-        getMenuInflater().inflate(R.menu.weather, mOptionsMenu);
+        getMenuInflater().inflate(R.menu.weather, menu);
         return true;
     }
 
@@ -104,10 +101,21 @@ public class WeatherActivity extends AppCompatActivity {
      */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.change_city) {
+        if (item.getItemId() == R.id.change_cities) {
             showInputDialog();
+            return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        if(!hasInternetConnection) {
+            MenuItem item = menu.findItem(R.id.change_cities);
+            item.setVisible(false);
+        }
+        super.onPrepareOptionsMenu(menu);
+        return true;
     }
 
     /**
@@ -293,9 +301,4 @@ public class WeatherActivity extends AppCompatActivity {
     public static boolean isActivityVisible() {
         return activityVisible;
     }
-
-    public static Menu getOptionsMenu() {
-        return mOptionsMenu;
-    }
-
 }

@@ -20,7 +20,7 @@ class WeatherResults {
         return lastUpdated;
     }
 
-    String getDetails() { return details; }
+   // String getDetails() { return details; }
 
     String getTemperature() {
         return temperature;

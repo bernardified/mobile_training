@@ -1,6 +1,6 @@
 package com.shopback.nardweather;
 
-import android.content.Context;
+import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,8 +15,6 @@ import java.util.concurrent.TimeUnit;
 class WeatherManager {
 
     static boolean hasInstance = false;
-
-    private final Context context;
 
     private static final int KEEP_ALIVE_TIME = 1;
 
@@ -37,18 +35,24 @@ class WeatherManager {
     /**
      * Private WeatherManager constructor
      */
-    private WeatherManager(final Context context) {
+    private WeatherManager(final Activity activity) {
         BlockingQueue<Runnable> fetchWeatherQueue = new LinkedBlockingQueue<>();
         fetchWeatherJobs = new ThreadPoolExecutor(NUMBER_OF_CORES, NUMBER_OF_CORES,
                 KEEP_ALIVE_TIME, KEEP_ALIVE_TIME_UNIT, fetchWeatherQueue);
-        this.context = context;
 
         mainThreadHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message inputMessage) {
+
+                if(inputMessage.what == NetworkUtil.NETWORK_ERROR_ID) {
+                    WeatherActivity.hasInternetConnection = false;
+                    activity.invalidateOptionsMenu();
+                }
+
                 Bundle b = inputMessage.getData();
                 errorMessage = b.getString("errorMessage");
-                Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show();
+                Toast.makeText(activity, errorMessage, Toast.LENGTH_LONG).show();
+
 
             }
         };
@@ -64,9 +68,9 @@ class WeatherManager {
         return sInstance;
     }
 
-    static WeatherManager getInstance(Context context) {
+    static WeatherManager getInstance(Activity activity) {
         synchronized (WeatherManager.class) {
-            sInstance = new WeatherManager(context);
+            sInstance = new WeatherManager(activity);
             hasInstance = true;
         }
         return sInstance;
