@@ -43,7 +43,6 @@ class FetchWeather {
             connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(10000);
-            connection.setRequestProperty("Accept", "application/json");
 
             Log.d("Get-Request", url.toString());
 
@@ -53,6 +52,7 @@ class FetchWeather {
             StringBuilder responseString = new StringBuilder();
             String line;
             while((line = reader.readLine()) != null) {
+
                 responseString.append(line).append('\n');
             }
             reader.close();
@@ -65,20 +65,21 @@ class FetchWeather {
 
             return parseResult(data);
 
+
         } catch (SocketTimeoutException e) {
             Log.d("Get-Response", "Connection timeout");
             Message errorMessage = new Message();
             Bundle b = new Bundle();
             b.putString("errorMessage","Connection timeout");
             errorMessage.setData(b);
-            WeatherActivity.postToUiHandler.sendMessage(errorMessage);
+            WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
         } catch(Exception e){
             Log.d("Get-Response", "City not found");
             Message errorMessage = new Message();
             Bundle b = new Bundle();
             b.putString("errorMessage","City not found!");
             errorMessage.setData(b);
-            WeatherActivity.postToUiHandler.sendMessage(errorMessage);
+            WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
         }
         return null;
     }
@@ -124,6 +125,7 @@ class FetchWeather {
             number of WeatherResults object created by 1
              */
             results = new WeatherResults(city,lastUpdated,details,temperature, weatherIcon);
+
 
         } catch (Exception e) {
             results = null;

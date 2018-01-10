@@ -21,12 +21,11 @@ import android.widget.Toast;
 public class WeatherActivity extends AppCompatActivity {
 
     private static final String DEFAULT_CITY_SG = "Singapore,SG";
-    private static final String DEFAULT_CITY_MY = "Johor Bahru, MY";
-    private static final String DEFAULT_CITY_ID = "Jakarta, ID";
+    private static final String DEFAULT_CITY_MY = "Johor Bahru , MY";
+    private static final String DEFAULT_CITY_ID = "Jakarta,ID";
     private static final String WEATHER_FONT_PATH = "fonts/weathericons_regular_webfont.ttf";
 
     private static int count = 0;
-    private static String errorMessage;
 
     public static Handler postToUiHandler;
 
@@ -42,14 +41,13 @@ public class WeatherActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather_multi);
 
-        weatherManager = WeatherManager.getInstance();
-        postToUiHandler = new Handler(Looper.getMainLooper()) {
-            @Override
-            public void handleMessage(Message inputMessage) {
-                Bundle b = inputMessage.getData();
-                errorMessage = b.getString("errorMessage");
-            }
-        };
+
+        if(!WeatherManager.hasInstance) {
+            weatherManager = WeatherManager.getInstance(WeatherActivity.this);
+        } else {
+            weatherManager = WeatherManager.getInstance();
+        }
+        postToUiHandler = WeatherManager.getInstance().getMainThreadHandler();
 
         weatherFont = Typeface.createFromAsset(this.getAssets(), WEATHER_FONT_PATH);
 
@@ -233,11 +231,15 @@ public class WeatherActivity extends AppCompatActivity {
     private Runnable getFetchWeatherRunnable(final String city) {
         return new Runnable() {
             WeatherResults results;
+            Runnable runData;
 
             @Override
             public void run() {
                 results = FetchWeather.getWeather(WeatherActivity.this, city);
-                postToUiHandler.post(getUiRunnable(results));
+                runData = getUiRunnable(results);
+                if(runData != null) {
+                    postToUiHandler.post(getUiRunnable(results));
+                }
             }
         };
     }
@@ -252,13 +254,6 @@ public class WeatherActivity extends AppCompatActivity {
     private Runnable getUiRunnable(final WeatherResults results) {
         if (results == null) {
             Log.d("updateWeather", "data is null");
-            return new Runnable() {
-                public void run() {
-                    Toast.makeText(WeatherActivity.this, errorMessage, Toast.LENGTH_LONG)
-                            .show();
-                }
-            };
-
         } else {
             return new Runnable() {
                 public void run() {
@@ -266,6 +261,7 @@ public class WeatherActivity extends AppCompatActivity {
                 }
             };
         }
+        return null;
     }
 
     private static Integer getOrder(){
