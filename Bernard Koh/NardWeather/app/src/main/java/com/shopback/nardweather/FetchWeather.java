@@ -1,6 +1,7 @@
 package com.shopback.nardweather;
 
 import android.content.Context;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
@@ -27,8 +28,11 @@ class FetchWeather {
      * @param city: String
      * @return WeatherResults
      */
-    static WeatherResults getWeather(Context context, String city) {
+    static WeatherResults getWeather(Context context, String city) throws NoInternetConnectionException {
         HttpURLConnection connection;
+        Message errorMessage;
+        Bundle b;
+
         String OPEN_WEATHER_MAP_API_CALL =
                 "http://api.openweathermap.org/data/2.5/weather?q=%s&units=metric&appid=%s";
         try{
@@ -39,6 +43,13 @@ class FetchWeather {
 
             String fullString = String.format(OPEN_WEATHER_MAP_API_CALL, city,
                     context.getString(R.string.open_weather_map_api_key));
+
+            NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(context);
+            if (networkInfo == null || !networkInfo.isConnected()) {
+                //removed menu item? //show error message?
+                throw new NoInternetConnectionException();
+            }
+
             URL url = new URL(fullString);
             connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(5000);
@@ -56,6 +67,7 @@ class FetchWeather {
                 responseString.append(line).append('\n');
             }
             reader.close();
+            connection.disconnect();
 
             JSONObject data = new JSONObject(responseString.toString());
             if(data.getInt("cod") != 200){
@@ -65,19 +77,25 @@ class FetchWeather {
 
             return parseResult(data);
 
+        } catch (NoInternetConnectionException | SocketTimeoutException e){
+            errorMessage = new Message();
+            b = new Bundle();
 
-        } catch (SocketTimeoutException e) {
-            Log.d("Get-Response", "Connection timeout");
-            Message errorMessage = new Message();
-            Bundle b = new Bundle();
-            b.putString("errorMessage","Connection timeout");
+            if(e instanceof NoInternetConnectionException) {
+                errorMessage.what = NetworkUtil.NETWORK_ERROR_ID;
+                Log.d("Get-Response", "No Internet Connection Available");
+                b.putString("errorMessage","No Internet Connection available");
+            } else if (e instanceof SocketTimeoutException) {
+                Log.d("Get-Response", "Connection has timed-out.");
+                b.putString("errorMessage","Connection Timeout. Retry again later.");
+            }
             errorMessage.setData(b);
             WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
-        } catch(Exception e){
+        } catch (Exception e) {
+            errorMessage = new Message();
+            b = new Bundle();
             Log.d("Get-Response", "City not found");
-            Message errorMessage = new Message();
-            Bundle b = new Bundle();
-            b.putString("errorMessage","City not found!");
+            b.putString("errorMessage","City not Found. Please enter a valid city.");
             errorMessage.setData(b);
             WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
         }

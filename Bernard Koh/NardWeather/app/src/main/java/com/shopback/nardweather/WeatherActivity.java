@@ -4,7 +4,6 @@ import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -16,7 +15,6 @@ import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class WeatherActivity extends AppCompatActivity {
 
@@ -26,6 +24,7 @@ public class WeatherActivity extends AppCompatActivity {
     private static final String WEATHER_FONT_PATH = "fonts/weathericons_regular_webfont.ttf";
 
     private static int count = 0;
+    private static boolean activityVisible;
 
     public static Handler postToUiHandler;
 
@@ -33,6 +32,7 @@ public class WeatherActivity extends AppCompatActivity {
     TextView cityField, lastUpdatedField, weatherIcon, temperatureField,
             cityFieldTwo, lastUpdatedFieldTwo, weatherIconTwo, temperatureFieldTwo,
             cityFieldThree, lastUpdatedFieldThree, weatherIconThree, temperatureFieldThree;
+    private static Menu mOptionsMenu;
 
     Typeface weatherFont;
 
@@ -41,8 +41,7 @@ public class WeatherActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather_multi);
 
-
-        if(!WeatherManager.hasInstance) {
+        if (!WeatherManager.hasInstance) {
             weatherManager = WeatherManager.getInstance(WeatherActivity.this);
         } else {
             weatherManager = WeatherManager.getInstance();
@@ -76,13 +75,32 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        activityVisible = true;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        activityVisible = false;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        activityVisible = true;
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.weather, menu);
+        mOptionsMenu = menu;
+        getMenuInflater().inflate(R.menu.weather, mOptionsMenu);
         return true;
     }
 
     /**
-     * Invokes input Alert Dialog when change city is selected
+     * Invokes input Alert Dialog when change cities is selected
      */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -235,10 +253,14 @@ public class WeatherActivity extends AppCompatActivity {
 
             @Override
             public void run() {
-                results = FetchWeather.getWeather(WeatherActivity.this, city);
-                runData = getUiRunnable(results);
-                if(runData != null) {
-                    postToUiHandler.post(getUiRunnable(results));
+                try {
+                    results = FetchWeather.getWeather(WeatherActivity.this, city);
+                    runData = getUiRunnable(results);
+                    if (runData != null) {
+                        postToUiHandler.post(getUiRunnable(results));
+                    }
+                } catch (Exception e){
+                    e.printStackTrace();
                 }
             }
         };
@@ -264,7 +286,16 @@ public class WeatherActivity extends AppCompatActivity {
         return null;
     }
 
-    private static Integer getOrder(){
-        return count++%3;
+    private static Integer getOrder() {
+        return count++ % 3;
     }
+
+    public static boolean isActivityVisible() {
+        return activityVisible;
+    }
+
+    public static Menu getOptionsMenu() {
+        return mOptionsMenu;
+    }
+
 }

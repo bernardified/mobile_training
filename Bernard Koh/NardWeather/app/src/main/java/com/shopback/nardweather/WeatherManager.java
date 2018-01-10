@@ -49,6 +49,7 @@ class WeatherManager {
                 Bundle b = inputMessage.getData();
                 errorMessage = b.getString("errorMessage");
                 Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show();
+
             }
         };
     }
