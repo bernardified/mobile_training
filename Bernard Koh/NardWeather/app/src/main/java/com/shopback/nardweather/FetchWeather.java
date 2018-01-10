@@ -19,36 +19,36 @@ import java.util.Locale;
 
 class FetchWeather {
 
-    private static final String EMPTY_STRING="";
+    private static final String EMPTY_STRING = "";
 
-    /**Retrieves city's weather information from openweathermap.org. The JSONObject is null if the
-     *input city is empty. Invalid city name will throw an exception
+    /**
+     * Retrieves city's weather information from openweathermap.org. The JSONObject is null if the
+     * input city is empty. Invalid city name will throw an exception
      *
      * @param context: Context
-     * @param city: String
+     * @param city:    String
      * @return WeatherResults
      */
-    static WeatherResults getWeather(Context context, String city) throws NoInternetConnectionException {
+    static WeatherResults getWeather(Context context, String city){
         HttpURLConnection connection;
         Message errorMessage;
         Bundle b;
 
         String OPEN_WEATHER_MAP_API_CALL =
                 "http://api.openweathermap.org/data/2.5/weather?q=%s&units=metric&appid=%s";
-        try{
+        try {
+            //check network connection
+            if (!NetworkUtil.getActiveNetworkInfo(context).isConnected()) {
+                return parseResult(null);
+            }
+
             /*empty string where user did not enter any input*/
-            if(city.equals("")) {
+            if (city.equals("")) {
                 return parseResult(null);
             }
 
             String fullString = String.format(OPEN_WEATHER_MAP_API_CALL, city,
                     context.getString(R.string.open_weather_map_api_key));
-
-            NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(context);
-            if (networkInfo == null || !networkInfo.isConnected()) {
-                //removed menu item? //show error message?
-                throw new NoInternetConnectionException();
-            }
 
             URL url = new URL(fullString);
             connection = (HttpURLConnection) url.openConnection();
@@ -62,7 +62,7 @@ class FetchWeather {
 
             StringBuilder responseString = new StringBuilder();
             String line;
-            while((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null) {
 
                 responseString.append(line).append('\n');
             }
@@ -70,49 +70,43 @@ class FetchWeather {
             connection.disconnect();
 
             JSONObject data = new JSONObject(responseString.toString());
-            if(data.getInt("cod") != 200){
+            if (data.getInt("cod") != 200) {
                 return null;
             }
             Log.d("Get-Response", responseString.toString());
 
             return parseResult(data);
 
-        } catch (NoInternetConnectionException | SocketTimeoutException e){
+        }catch (SocketTimeoutException e) {
             errorMessage = new Message();
             b = new Bundle();
-
-            if(e instanceof NoInternetConnectionException) {
-                errorMessage.what = NetworkUtil.NETWORK_ERROR_ID;
-                Log.d("Get-Response", "No Internet Connection Available");
-                b.putString("errorMessage","No Internet Connection available");
-            } else if (e instanceof SocketTimeoutException) {
-                Log.d("Get-Response", "Connection has timed-out.");
-                b.putString("errorMessage","Connection Timeout. Retry again later.");
-            }
+            Log.d("Get-Response", "Connection has timed-out.");
+            b.putString("errorMessage", "Connection Timeout. Retry again later.");
             errorMessage.setData(b);
             WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
         } catch (Exception e) {
             errorMessage = new Message();
             b = new Bundle();
             Log.d("Get-Response", "City not found");
-            b.putString("errorMessage","City not Found. Please enter a valid city.");
+            b.putString("errorMessage", "City not Found. Please enter a valid city.");
             errorMessage.setData(b);
             WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
         }
         return null;
     }
 
-    /**parse results from JSONObject and store in WeatherResults. WeatherResults attributes will be empty string
+    /**
+     * parse results from JSONObject and store in WeatherResults. WeatherResults attributes will be empty string
      * if JSONObject is null
      *
      * @param data: JSONObject
      * @return WeatherResults. Exception is called if any of the weather info cannot be retrieved
      */
     private static WeatherResults parseResult(JSONObject data) {
-        WeatherResults results ;
+        WeatherResults results;
         try {
             //no user input
-            if(data == null) {
+            if (data == null) {
                 return new WeatherResults(EMPTY_STRING, EMPTY_STRING, EMPTY_STRING,
                         EMPTY_STRING, EMPTY_STRING);
             }
@@ -133,7 +127,7 @@ class FetchWeather {
             details = detailsInfo.getString("description").toUpperCase(Locale.US) +
                     "\n" + "Humidity:" + main.getString("humidity") + " %" +
                     "\n" + "Pressure:" + main.getString("pressure") + " hPa";
-            temperature = String.valueOf(((Double)main.getDouble("temp")).intValue()) + "℃";
+            temperature = String.valueOf(((Double) main.getDouble("temp")).intValue()) + "℃";
 
             weatherIcon = convertWeatherIcon(detailsInfo.getInt("id"),
                     data.getJSONObject("sys").getLong("sunrise") * 1000,
@@ -142,7 +136,7 @@ class FetchWeather {
             /*create the WeatherResults object from the retrieved information and increment the
             number of WeatherResults object created by 1
              */
-            results = new WeatherResults(city,lastUpdated,details,temperature, weatherIcon);
+            results = new WeatherResults(city, lastUpdated, details, temperature, weatherIcon);
 
 
         } catch (Exception e) {
@@ -152,15 +146,16 @@ class FetchWeather {
         return results;
     }
 
-    /**Adds string.xml prefix to the weather Id based on the current time
+    /**
+     * Adds string.xml prefix to the weather Id based on the current time
      * retreived from openweathermap.org
      *
      * @param weatherId: Integer
-     * @param sunrise: long
-     * @param sunset: long
+     * @param sunrise:   long
+     * @param sunset:    long
      * @return String
      */
-    private static String convertWeatherIcon (Integer weatherId, long sunrise, long sunset) {
+    private static String convertWeatherIcon(Integer weatherId, long sunrise, long sunset) {
         final String DAY_PREFIX = "wi_owm_day_";
         final String NIGHT_PREFIX = "wi_owm_night_";
 
@@ -168,7 +163,7 @@ class FetchWeather {
 
         String weatherIcon;
         long currentTime = new Date().getTime();
-        if(currentTime >= sunrise && currentTime < sunset) {
+        if (currentTime >= sunrise && currentTime < sunset) {
             weatherIcon = DAY_PREFIX + weatherId.toString();
         } else {
             weatherIcon = NIGHT_PREFIX + weatherId.toString();

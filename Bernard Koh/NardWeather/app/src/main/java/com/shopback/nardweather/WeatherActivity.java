@@ -1,8 +1,11 @@
 package com.shopback.nardweather;
 
 import android.content.DialogInterface;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -31,9 +34,9 @@ public class WeatherActivity extends AppCompatActivity {
     TextView cityField, lastUpdatedField, weatherIcon, temperatureField,
             cityFieldTwo, lastUpdatedFieldTwo, weatherIconTwo, temperatureFieldTwo,
             cityFieldThree, lastUpdatedFieldThree, weatherIconThree, temperatureFieldThree;
-    public static boolean hasInternetConnection = true;
 
     Typeface weatherFont;
+    NetworkReceiver networkReceiver = new NetworkReceiver();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,9 +70,10 @@ public class WeatherActivity extends AppCompatActivity {
         temperatureFieldThree = findViewById(R.id.current_temperature_field_3);
         weatherIconThree.setTypeface(weatherFont);
 
-        if (savedInstanceState == null) {
-            updateWeather(DEFAULT_CITY_SG, DEFAULT_CITY_MY, DEFAULT_CITY_ID);
-        }
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        registerReceiver(networkReceiver, filter);
+
     }
 
     @Override
@@ -88,6 +92,18 @@ public class WeatherActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         activityVisible = true;
+
+        //to update from saved preference next time
+        updateWeather(DEFAULT_CITY_SG, DEFAULT_CITY_MY, DEFAULT_CITY_ID);
+    }
+
+    @Override
+    public void onDestroy() {
+        if (networkReceiver != null) {
+            unregisterReceiver(networkReceiver);
+            networkReceiver = null;
+        }
+        super.onDestroy();
     }
 
     @Override
@@ -108,11 +124,14 @@ public class WeatherActivity extends AppCompatActivity {
         return false;
     }
 
+    //something wrong here
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        if(!hasInternetConnection) {
-            MenuItem item = menu.findItem(R.id.change_cities);
-            item.setVisible(false);
+        NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(this);
+        if (networkInfo != null && networkInfo.isConnected()) {
+            menu.findItem(R.id.change_cities).setEnabled(true);
+        } else {
+           menu.findItem(R.id.change_cities).setEnabled(false);
         }
         super.onPrepareOptionsMenu(menu);
         return true;
@@ -296,9 +315,5 @@ public class WeatherActivity extends AppCompatActivity {
 
     private static Integer getOrder() {
         return count++ % 3;
-    }
-
-    public static boolean isActivityVisible() {
-        return activityVisible;
     }
 }

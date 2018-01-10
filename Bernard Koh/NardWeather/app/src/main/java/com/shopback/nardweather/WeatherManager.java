@@ -44,8 +44,7 @@ class WeatherManager {
             @Override
             public void handleMessage(Message inputMessage) {
 
-                if(inputMessage.what == NetworkUtil.NETWORK_ERROR_ID) {
-                    WeatherActivity.hasInternetConnection = false;
+                if(inputMessage.what == NetworkUtil.NETWORK_ERROR_ID || inputMessage.what == NetworkUtil.NETWORK_NO_ERROR_ID ) {
                     activity.invalidateOptionsMenu();
                 }
 
