@@ -4,7 +4,6 @@ import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.support.v7.app.AlertDialog;
@@ -26,7 +25,6 @@ public class WeatherActivity extends AppCompatActivity {
     private static final String WEATHER_FONT_PATH = "fonts/weathericons_regular_webfont.ttf";
 
     private static int count = 0;
-    private static boolean activityVisible;
 
     public static Handler postToUiHandler;
 
@@ -79,19 +77,16 @@ public class WeatherActivity extends AppCompatActivity {
     @Override
     public void onStart() {
         super.onStart();
-        activityVisible = true;
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        activityVisible = false;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        activityVisible = true;
 
         //to update from saved preference next time
         updateWeather(DEFAULT_CITY_SG, DEFAULT_CITY_MY, DEFAULT_CITY_ID);
@@ -124,7 +119,6 @@ public class WeatherActivity extends AppCompatActivity {
         return false;
     }
 
-    //something wrong here
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(this);
@@ -250,7 +244,6 @@ public class WeatherActivity extends AppCompatActivity {
                 cityFieldThree.setText(data.getCity());
                 lastUpdatedFieldThree.setText(data.getLastUpdated());
                 temperatureFieldThree.setText(data.getTemperature());
-
                 //get the id of the respective weather icon based on the weather code
                 weatherIconIdentifier = getResources().getIdentifier(data.getWeatherIcon(),
                         "string", this.getPackageName());

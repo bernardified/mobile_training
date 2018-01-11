@@ -1,7 +1,6 @@
 package com.shopback.nardweather;
 
 import android.content.Context;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
@@ -37,13 +36,8 @@ class FetchWeather {
         String OPEN_WEATHER_MAP_API_CALL =
                 "http://api.openweathermap.org/data/2.5/weather?q=%s&units=metric&appid=%s";
         try {
-            //check network connection
-            if (!NetworkUtil.getActiveNetworkInfo(context).isConnected()) {
-                return parseResult(null);
-            }
-
-            /*empty string where user did not enter any input*/
-            if (city.equals("")) {
+            //when there is no network connection or empty string where user did not enter any input
+            if (NetworkUtil.getActiveNetworkInfo(context) == null || city.equals("")) {
                 return parseResult(null);
             }
 

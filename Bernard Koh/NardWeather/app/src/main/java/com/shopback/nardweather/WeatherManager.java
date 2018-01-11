@@ -34,8 +34,11 @@ class WeatherManager {
 
     /**
      * Private WeatherManager constructor
+     * @param activity: Activity
      */
     private WeatherManager(final Activity activity) {
+
+        //initialize thread pool to run multiple fetch weather jobs
         BlockingQueue<Runnable> fetchWeatherQueue = new LinkedBlockingQueue<>();
         fetchWeatherJobs = new ThreadPoolExecutor(NUMBER_OF_CORES, NUMBER_OF_CORES,
                 KEEP_ALIVE_TIME, KEEP_ALIVE_TIME_UNIT, fetchWeatherQueue);
@@ -43,16 +46,12 @@ class WeatherManager {
         mainThreadHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message inputMessage) {
-
                 if(inputMessage.what == NetworkUtil.NETWORK_ERROR_ID || inputMessage.what == NetworkUtil.NETWORK_NO_ERROR_ID ) {
                     activity.invalidateOptionsMenu();
                 }
-
                 Bundle b = inputMessage.getData();
                 errorMessage = b.getString("errorMessage");
                 Toast.makeText(activity, errorMessage, Toast.LENGTH_LONG).show();
-
-
             }
         };
     }

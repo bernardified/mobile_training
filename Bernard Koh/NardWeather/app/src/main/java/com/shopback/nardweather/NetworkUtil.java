@@ -12,6 +12,11 @@ class NetworkUtil{
     static final int NETWORK_NO_ERROR_ID = 2;
     private static ConnectivityManager cm;
 
+    /**
+     * Retrieves the current network status information
+     * @param context: Context
+     * @return NetworkInfo
+     */
     static NetworkInfo getActiveNetworkInfo(Context context) {
         if (cm == null) {
             cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);

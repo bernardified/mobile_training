@@ -7,6 +7,12 @@ import android.os.Bundle;
 import android.os.Message;
 
 public class NetworkReceiver extends BroadcastReceiver {
+
+    /**
+     * Detect changes in the network and sends a message which is displayed on the main activity
+     * @param context: Context
+     * @param intent: Intent
+     */
     @Override
     public void onReceive(Context context, Intent intent) {
         Message status = new Message();
