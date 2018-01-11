@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
@@ -16,6 +17,10 @@ import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.support.v7.widget.RecyclerView;
+
+import java.util.LinkedList;
+
 
 public class WeatherActivity extends AppCompatActivity {
 
@@ -27,14 +32,22 @@ public class WeatherActivity extends AppCompatActivity {
     private static int count = 0;
 
     public static Handler postToUiHandler;
+    NetworkReceiver networkReceiver = NetworkReceiver.getInstance();
+    IntentFilter filter = new IntentFilter();
 
     WeatherManager weatherManager;
-    TextView cityField, lastUpdatedField, weatherIcon, temperatureField,
+    LinkedList<WeatherResults> dataSet;
+
+    private TextView cityField, lastUpdatedField, weatherIcon, temperatureField,
             cityFieldTwo, lastUpdatedFieldTwo, weatherIconTwo, temperatureFieldTwo,
             cityFieldThree, lastUpdatedFieldThree, weatherIconThree, temperatureFieldThree;
+ /*   private RecyclerView weatherRecyclerView;
+    private RecyclerView.Adapter weatherAdapter;
+    private RecyclerView.LayoutManager weatherLayoutManager;*/
+
 
     Typeface weatherFont;
-    NetworkReceiver networkReceiver = new NetworkReceiver();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +60,6 @@ public class WeatherActivity extends AppCompatActivity {
             weatherManager = WeatherManager.getInstance();
         }
         postToUiHandler = WeatherManager.getInstance().getMainThreadHandler();
-
         weatherFont = Typeface.createFromAsset(this.getAssets(), WEATHER_FONT_PATH);
 
         cityField = findViewById(R.id.city_field);
@@ -67,16 +79,29 @@ public class WeatherActivity extends AppCompatActivity {
         weatherIconThree = findViewById(R.id.weather_icon_3);
         temperatureFieldThree = findViewById(R.id.current_temperature_field_3);
         weatherIconThree.setTypeface(weatherFont);
-
-        IntentFilter filter = new IntentFilter();
-        filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
-        registerReceiver(networkReceiver, filter);
-
+/*
+        //setting up recycler view
+        weatherRecyclerView = findViewById(R.id.weather_recycler_view);
+        weatherRecyclerView.setHasFixedSize(true);
+        //connecting to layout manager
+        weatherLayoutManager = new LinearLayoutManager(this);
+        weatherRecyclerView.setLayoutManager(weatherLayoutManager);
+        //creating of adapter and link to recycler view
+        weatherAdapter = new WeatherAdapter(dataSet);
+        weatherRecyclerView.setAdapter(weatherAdapter); */
     }
 
     @Override
     public void onStart() {
+        filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        registerReceiver(networkReceiver, filter);
         super.onStart();
+    }
+
+    @Override
+    public  void onStop() {
+        unregisterReceiver(networkReceiver);
+        super.onStop();
     }
 
     @Override
@@ -94,10 +119,6 @@ public class WeatherActivity extends AppCompatActivity {
 
     @Override
     public void onDestroy() {
-        if (networkReceiver != null) {
-            unregisterReceiver(networkReceiver);
-            networkReceiver = null;
-        }
         super.onDestroy();
     }
 
@@ -268,12 +289,13 @@ public class WeatherActivity extends AppCompatActivity {
      */
     private Runnable getFetchWeatherRunnable(final String city) {
         return new Runnable() {
-            WeatherResults results;
             Runnable runData;
+            WeatherResults results;
 
             @Override
             public void run() {
                 try {
+                    Log.d("Network", "fetching "+city);
                     results = FetchWeather.getWeather(WeatherActivity.this, city);
                     runData = getUiRunnable(results);
                     if (runData != null) {

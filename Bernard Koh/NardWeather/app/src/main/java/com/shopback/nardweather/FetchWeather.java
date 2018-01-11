@@ -36,7 +36,9 @@ class FetchWeather {
         String OPEN_WEATHER_MAP_API_CALL =
                 "http://api.openweathermap.org/data/2.5/weather?q=%s&units=metric&appid=%s";
         try {
-            //when there is no network connection or empty string where user did not enter any input
+            /*when there is no network connection or empty string where user did not enter any input
+            * have to recheck network status as fetch weather is called before receiver is done
+            * */
             if (NetworkUtil.getActiveNetworkInfo(context) == null || city.equals("")) {
                 return parseResult(null);
             }

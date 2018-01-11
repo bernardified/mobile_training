@@ -14,21 +14,16 @@ import java.util.concurrent.TimeUnit;
 
 class WeatherManager {
 
-    static boolean hasInstance = false;
-
-    private static final int KEEP_ALIVE_TIME = 1;
-
-    private static int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
-
-    private static final TimeUnit KEEP_ALIVE_TIME_UNIT = TimeUnit.SECONDS;
-
     private final ThreadPoolExecutor fetchWeatherJobs;
+    private static final int KEEP_ALIVE_TIME = 1;
+    private static final TimeUnit KEEP_ALIVE_TIME_UNIT = TimeUnit.SECONDS;
+    private static int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
 
     //single instance of WeatherManager. Singleton pattern
     private static WeatherManager sInstance = null;
+    static boolean hasInstance = false;
 
     private Handler mainThreadHandler;
-
     private String errorMessage;
 
 
@@ -46,12 +41,16 @@ class WeatherManager {
         mainThreadHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message inputMessage) {
-                if(inputMessage.what == NetworkUtil.NETWORK_ERROR_ID || inputMessage.what == NetworkUtil.NETWORK_NO_ERROR_ID ) {
-                    activity.invalidateOptionsMenu();
-                }
                 Bundle b = inputMessage.getData();
                 errorMessage = b.getString("errorMessage");
-                Toast.makeText(activity, errorMessage, Toast.LENGTH_LONG).show();
+                if(inputMessage.what == NetworkUtil.NETWORK_ERROR_ID) {
+                    //TODO show a banner instead of Toast
+                    Toast.makeText(activity, errorMessage, Toast.LENGTH_LONG).show();
+                } else if (inputMessage.what == NetworkUtil.NETWORK_NO_ERROR_ID) {
+                    Toast.makeText(activity, errorMessage, Toast.LENGTH_SHORT).show();
+                }
+                activity.invalidateOptionsMenu();
+
             }
         };
     }
