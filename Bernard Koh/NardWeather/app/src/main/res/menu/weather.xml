@@ -5,8 +5,8 @@
     tools:context="com.shopback.nardweather.WeatherActivity" >
 
     <item
-        android:id="@+id/change_cities"
+        android:id="@+id/add_cities"
         android:orderInCategory="1"
-        android:title="@string/change_cities"
+        android:title="@string/add_cities"
         app:showAsAction="always"/>
 </menu>

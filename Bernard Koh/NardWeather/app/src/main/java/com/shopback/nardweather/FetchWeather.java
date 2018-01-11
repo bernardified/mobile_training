@@ -40,7 +40,7 @@ class FetchWeather {
             * have to recheck network status as fetch weather is called before receiver is done
             * */
             if (NetworkUtil.getActiveNetworkInfo(context) == null || city.equals("")) {
-                return parseResult(null);
+                return null;
             }
 
             String fullString = String.format(OPEN_WEATHER_MAP_API_CALL, city,
@@ -101,12 +101,6 @@ class FetchWeather {
     private static WeatherResults parseResult(JSONObject data) {
         WeatherResults results;
         try {
-            //no user input
-            if (data == null) {
-                return new WeatherResults(EMPTY_STRING, EMPTY_STRING, EMPTY_STRING,
-                        EMPTY_STRING, EMPTY_STRING);
-            }
-
             JSONObject detailsInfo, main;
             String city, lastUpdated, details, temperature, weatherIcon;
             DateFormat df;

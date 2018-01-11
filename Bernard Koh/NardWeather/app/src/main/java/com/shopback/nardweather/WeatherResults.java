@@ -1,5 +1,6 @@
 package com.shopback.nardweather;
 
+
 class WeatherResults {
 
     private final String city, lastUpdated, details, temperature, weatherIcon;

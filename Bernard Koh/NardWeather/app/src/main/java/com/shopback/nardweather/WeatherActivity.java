@@ -3,7 +3,6 @@ package com.shopback.nardweather;
 import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.support.v7.app.AlertDialog;
@@ -16,43 +15,28 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.support.v7.widget.RecyclerView;
 
 import java.util.LinkedList;
 
 
 public class WeatherActivity extends AppCompatActivity {
-
-    private static final String DEFAULT_CITY_SG = "Singapore,SG";
-    private static final String DEFAULT_CITY_MY = "Johor Bahru , MY";
-    private static final String DEFAULT_CITY_ID = "Jakarta,ID";
-    private static final String WEATHER_FONT_PATH = "fonts/weathericons_regular_webfont.ttf";
-
-    private static int count = 0;
+    public static final String DEFAULT_CITY_SG = "SINGAPORE,SG";
+    public static final String DEFAULT_CITY_MY = "KUALA LUMPUR,MY";
+    public static final String DEFAULT_CITY_ID = "BRISBANE,AU";
 
     public static Handler postToUiHandler;
     NetworkReceiver networkReceiver = NetworkReceiver.getInstance();
     IntentFilter filter = new IntentFilter();
 
     WeatherManager weatherManager;
-    LinkedList<WeatherResults> dataSet;
-
-    private TextView cityField, lastUpdatedField, weatherIcon, temperatureField,
-            cityFieldTwo, lastUpdatedFieldTwo, weatherIconTwo, temperatureFieldTwo,
-            cityFieldThree, lastUpdatedFieldThree, weatherIconThree, temperatureFieldThree;
- /*   private RecyclerView weatherRecyclerView;
-    private RecyclerView.Adapter weatherAdapter;
-    private RecyclerView.LayoutManager weatherLayoutManager;*/
-
-
-    Typeface weatherFont;
-
+    LinkedList<WeatherResults> weatherList;
+    WeatherAdapter weatherAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_weather_multi);
+        setContentView(R.layout.activity_weather_recycler);
 
         if (!WeatherManager.hasInstance) {
             weatherManager = WeatherManager.getInstance(WeatherActivity.this);
@@ -60,35 +44,17 @@ public class WeatherActivity extends AppCompatActivity {
             weatherManager = WeatherManager.getInstance();
         }
         postToUiHandler = WeatherManager.getInstance().getMainThreadHandler();
-        weatherFont = Typeface.createFromAsset(this.getAssets(), WEATHER_FONT_PATH);
 
-        cityField = findViewById(R.id.city_field);
-        lastUpdatedField = findViewById(R.id.updated_field);
-        weatherIcon = findViewById(R.id.weather_icon);
-        temperatureField = findViewById(R.id.current_temperature_field);
-        weatherIcon.setTypeface(weatherFont);
-
-        cityFieldTwo = findViewById(R.id.city_field_2);
-        lastUpdatedFieldTwo = findViewById(R.id.updated_field_2);
-        weatherIconTwo = findViewById(R.id.weather_icon_2);
-        temperatureFieldTwo = findViewById(R.id.current_temperature_field_2);
-        weatherIconTwo.setTypeface(weatherFont);
-
-        cityFieldThree = findViewById(R.id.city_field_3);
-        lastUpdatedFieldThree = findViewById(R.id.updated_field_3);
-        weatherIconThree = findViewById(R.id.weather_icon_3);
-        temperatureFieldThree = findViewById(R.id.current_temperature_field_3);
-        weatherIconThree.setTypeface(weatherFont);
-/*
         //setting up recycler view
-        weatherRecyclerView = findViewById(R.id.weather_recycler_view);
+        RecyclerView weatherRecyclerView = findViewById(R.id.weather_recycler_view);
         weatherRecyclerView.setHasFixedSize(true);
+        //initialise weather list
+        weatherList = new LinkedList<>();
         //connecting to layout manager
-        weatherLayoutManager = new LinearLayoutManager(this);
-        weatherRecyclerView.setLayoutManager(weatherLayoutManager);
+        weatherRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         //creating of adapter and link to recycler view
-        weatherAdapter = new WeatherAdapter(dataSet);
-        weatherRecyclerView.setAdapter(weatherAdapter); */
+        weatherAdapter = new WeatherAdapter(this, weatherList);
+        weatherRecyclerView.setAdapter(weatherAdapter);
     }
 
     @Override
@@ -99,7 +65,7 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     @Override
-    public  void onStop() {
+    public void onStop() {
         unregisterReceiver(networkReceiver);
         super.onStop();
     }
@@ -113,7 +79,7 @@ public class WeatherActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
 
-        //to update from saved preference next time
+        //TODO::to update from saved preference next time
         updateWeather(DEFAULT_CITY_SG, DEFAULT_CITY_MY, DEFAULT_CITY_ID);
     }
 
@@ -133,7 +99,7 @@ public class WeatherActivity extends AppCompatActivity {
      */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.change_cities) {
+        if (item.getItemId() == R.id.add_cities) {
             showInputDialog();
             return true;
         }
@@ -146,7 +112,7 @@ public class WeatherActivity extends AppCompatActivity {
         if (networkInfo != null && networkInfo.isConnected()) {
             menu.findItem(R.id.change_cities).setEnabled(true);
         } else {
-           menu.findItem(R.id.change_cities).setEnabled(false);
+            menu.findItem(R.id.change_cities).setEnabled(false);
         }
         super.onPrepareOptionsMenu(menu);
         return true;
@@ -215,69 +181,9 @@ public class WeatherActivity extends AppCompatActivity {
 
     /**
      * Dynamically retrieves respective weather icon from strings.xml and updates UI into their respective views
-     *
-     * @param data: WeatherResults
      */
-    private void updateUI(WeatherResults data) {
-        int weatherIconIdentifier;
-        switch (getOrder()) {
-
-            case 0:
-                Log.d("updateUI", "updating UI 1");
-                cityField.setText(data.getCity());
-                lastUpdatedField.setText(data.getLastUpdated());
-                temperatureField.setText(data.getTemperature());
-
-                //get the id of the respective weather icon based on the weather code
-                weatherIconIdentifier = getResources().getIdentifier(data.getWeatherIcon(),
-                        "string", this.getPackageName());
-
-                Log.d("updateUI", data.getWeatherIcon());
-
-                if (weatherIconIdentifier == 0) {
-                    weatherIcon.setText("");
-                } else {
-                    weatherIcon.setText(weatherIconIdentifier);
-                }
-                break;
-
-            case 1:
-
-                Log.d("updateUI", "updating UI 2");
-                cityFieldTwo.setText(data.getCity());
-                lastUpdatedFieldTwo.setText(data.getLastUpdated());
-                temperatureFieldTwo.setText(data.getTemperature());
-
-                //get the id of the respective weather icon based on the weather code
-                weatherIconIdentifier = getResources().getIdentifier(data.getWeatherIcon(),
-                        "string", this.getPackageName());
-
-                Log.d("updateUI", data.getWeatherIcon());
-                if (weatherIconIdentifier == 0) {
-                    weatherIconTwo.setText("");
-                } else {
-                    weatherIconTwo.setText(weatherIconIdentifier);
-                }
-                break;
-
-            case 2:
-                Log.d("updateUI", "updating UI 3");
-                cityFieldThree.setText(data.getCity());
-                lastUpdatedFieldThree.setText(data.getLastUpdated());
-                temperatureFieldThree.setText(data.getTemperature());
-                //get the id of the respective weather icon based on the weather code
-                weatherIconIdentifier = getResources().getIdentifier(data.getWeatherIcon(),
-                        "string", this.getPackageName());
-
-                Log.d("updateUI", data.getWeatherIcon());
-                if (weatherIconIdentifier == 0) {
-                    weatherIconThree.setText("");
-                } else {
-                    weatherIconThree.setText(weatherIconIdentifier);
-                }
-                break;
-        }
-
+    private void updateUI() {
+        //TODO: FILL THIS UP
     }
 
     /**
@@ -289,20 +195,16 @@ public class WeatherActivity extends AppCompatActivity {
      */
     private Runnable getFetchWeatherRunnable(final String city) {
         return new Runnable() {
-            Runnable runData;
-            WeatherResults results;
-
             @Override
             public void run() {
-                try {
-                    Log.d("Network", "fetching "+city);
-                    results = FetchWeather.getWeather(WeatherActivity.this, city);
-                    runData = getUiRunnable(results);
-                    if (runData != null) {
-                        postToUiHandler.post(getUiRunnable(results));
-                    }
-                } catch (Exception e){
-                    e.printStackTrace();
+                Log.d("Network", "fetching " + city);
+                WeatherResults data = FetchWeather.getWeather(WeatherActivity.this, city);
+                if (data != null) {
+                    int currentSize = weatherAdapter.getItemCount();
+                    weatherList.add(data);
+                    postToUiHandler.post(getUiRunnable(currentSize));
+                } else {
+                    Log.d("Network", "no data fetched for" + city);
                 }
             }
         };
@@ -312,23 +214,16 @@ public class WeatherActivity extends AppCompatActivity {
      * Creates a Runnable object to update the UI fields based on the WeatherResults.
      * Toast error message is shown if the city's weather information cannot be fetched
      *
-     * @param results: WeatherResults
+     * @param pos: int
      * @return Runnable
      */
-    private Runnable getUiRunnable(final WeatherResults results) {
-        if (results == null) {
-            Log.d("updateWeather", "data is null");
-        } else {
-            return new Runnable() {
-                public void run() {
-                    updateUI(results);
-                }
-            };
-        }
-        return null;
+    private Runnable getUiRunnable(final int pos) {
+        return new Runnable() {
+            public void run() {
+                weatherAdapter.notifyItemInserted(pos);
+            }
+        };
     }
 
-    private static Integer getOrder() {
-        return count++ % 3;
-    }
+
 }
