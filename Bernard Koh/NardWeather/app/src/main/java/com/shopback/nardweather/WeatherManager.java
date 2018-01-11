@@ -45,8 +45,11 @@ class WeatherManager {
                 errorMessage = b.getString("errorMessage");
                 if(inputMessage.what == NetworkUtil.NETWORK_ERROR_ID) {
                     //TODO show a banner instead of Toast
-                    Toast.makeText(activity, errorMessage, Toast.LENGTH_LONG).show();
-                } else if (inputMessage.what == NetworkUtil.NETWORK_NO_ERROR_ID) {
+                    WeatherActivity.showOfflineDialog(activity);
+                } else if (inputMessage.what == WeatherActivity.INVALID_CITY) {
+                    Toast.makeText(activity, errorMessage + " not found!", Toast.LENGTH_LONG).show();
+                } else {
+                    WeatherActivity.dismissDialg();
                     Toast.makeText(activity, errorMessage, Toast.LENGTH_SHORT).show();
                 }
                 activity.invalidateOptionsMenu();

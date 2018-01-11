@@ -1,5 +1,7 @@
 package com.shopback.nardweather;
 
+import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.graphics.Color;
@@ -11,8 +13,13 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.text.InputType;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.support.v7.widget.RecyclerView;
@@ -21,9 +28,7 @@ import java.util.LinkedList;
 
 
 public class WeatherActivity extends AppCompatActivity {
-    public static final String DEFAULT_CITY_SG = "SINGAPORE,SG";
-    public static final String DEFAULT_CITY_MY = "KUALA LUMPUR,MY";
-    public static final String DEFAULT_CITY_ID = "BRISBANE,AU";
+    public static final int INVALID_CITY = 3;
 
     public static Handler postToUiHandler;
     NetworkReceiver networkReceiver = NetworkReceiver.getInstance();
@@ -32,6 +37,7 @@ public class WeatherActivity extends AppCompatActivity {
     WeatherManager weatherManager;
     LinkedList<WeatherResults> weatherList;
     WeatherAdapter weatherAdapter;
+    static Dialog dialogDisplayed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +61,8 @@ public class WeatherActivity extends AppCompatActivity {
         //creating of adapter and link to recycler view
         weatherAdapter = new WeatherAdapter(this, weatherList);
         weatherRecyclerView.setAdapter(weatherAdapter);
+
+
     }
 
     @Override
@@ -78,9 +86,6 @@ public class WeatherActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-
-        //TODO::to update from saved preference next time
-        updateWeather(DEFAULT_CITY_SG, DEFAULT_CITY_MY, DEFAULT_CITY_ID);
     }
 
     @Override
@@ -110,9 +115,9 @@ public class WeatherActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(this);
         if (networkInfo != null && networkInfo.isConnected()) {
-            menu.findItem(R.id.change_cities).setEnabled(true);
+            menu.findItem(R.id.add_cities).setEnabled(true);
         } else {
-            menu.findItem(R.id.change_cities).setEnabled(false);
+            menu.findItem(R.id.add_cities).setEnabled(false);
         }
         super.onPrepareOptionsMenu(menu);
         return true;
@@ -220,9 +225,44 @@ public class WeatherActivity extends AppCompatActivity {
     private Runnable getUiRunnable(final int pos) {
         return new Runnable() {
             public void run() {
-                weatherAdapter.notifyItemInserted(pos);
+                weatherAdapter.notifyDataSetChanged();
             }
         };
+    }
+
+    public static void showOfflineDialog(Context context) {
+        final Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_LEFT_ICON);
+        dialog.setContentView(R.layout.offline_dialog);
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.setCancelable(true);
+
+        Window window = dialog.getWindow();
+        window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        window.setGravity(Gravity.BOTTOM);
+        window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+
+        Button cancelButton = dialog.findViewById(R.id.offline_dialog_cancel_button);
+
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+        setDialog(dialog);
+    }
+
+    public static void dismissDialg() {
+        if (dialogDisplayed != null) {
+            dialogDisplayed.dismiss();
+        }
+    }
+
+    private static void setDialog(Dialog dialog){
+        dialogDisplayed = dialog;
     }
 
 

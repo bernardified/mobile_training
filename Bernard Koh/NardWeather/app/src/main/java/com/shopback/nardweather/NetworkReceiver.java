@@ -10,7 +10,7 @@ import android.util.Log;
 
 public class NetworkReceiver extends BroadcastReceiver {
 
-    private int networkStatus;
+    public static int networkStatus;
     private static boolean hasInstance = false;
     private static NetworkReceiver receiver;
 
@@ -46,10 +46,6 @@ public class NetworkReceiver extends BroadcastReceiver {
         }
         message.setData(b);
         WeatherManager.getInstance().getMainThreadHandler().sendMessage(message);
-    }
-
-    public int getNetworkStatus() {
-        return networkStatus;
     }
 
     public static NetworkReceiver getInstance() {

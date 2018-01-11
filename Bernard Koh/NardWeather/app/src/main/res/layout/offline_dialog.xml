@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_gravity="bottom"
+    android:id="@+id/offline_dialog">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:background="@color/colorPrimary">
+
+        <TextView
+            android:id="@+id/offline_dialog_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Internet connection lost"
+            android:gravity="center"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/offline_dialog_cancel_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0"
+            android:background="@null"
+            android:textColor="@android:color/primary_text_light"
+            android:text="Cancel"
+            android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button"
+            android:textSize="10sp" />
+
+    </LinearLayout>
+
+</LinearLayout>

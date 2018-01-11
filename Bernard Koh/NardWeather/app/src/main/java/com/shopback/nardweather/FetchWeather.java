@@ -39,7 +39,7 @@ class FetchWeather {
             /*when there is no network connection or empty string where user did not enter any input
             * have to recheck network status as fetch weather is called before receiver is done
             * */
-            if (NetworkUtil.getActiveNetworkInfo(context) == null || city.equals("")) {
+            if (NetworkReceiver.getInstance().networkStatus == NetworkUtil.NETWORK_ERROR_ID || city.equals("")) {
                 return null;
             }
 
@@ -84,7 +84,8 @@ class FetchWeather {
             errorMessage = new Message();
             b = new Bundle();
             Log.d("Get-Response", "City not found");
-            b.putString("errorMessage", "City not Found. Please enter a valid city.");
+            errorMessage.what = WeatherActivity.INVALID_CITY;
+            b.putString("errorMessage", city);
             errorMessage.setData(b);
             WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
         }
