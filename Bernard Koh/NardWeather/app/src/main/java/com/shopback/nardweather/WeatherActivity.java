@@ -4,13 +4,17 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.NetworkInfo;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Gravity;
@@ -24,20 +28,31 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.support.v7.widget.RecyclerView;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import java.util.LinkedList;
 
 
 public class WeatherActivity extends AppCompatActivity {
     public static final int INVALID_CITY = 3;
-
+    public static final String CITY_PREF = "City";
     public static Handler postToUiHandler;
-    NetworkReceiver networkReceiver = NetworkReceiver.getInstance();
-    IntentFilter filter = new IntentFilter();
 
-    WeatherManager weatherManager;
-    LinkedList<WeatherResults> weatherList;
-    WeatherAdapter weatherAdapter;
     static Dialog dialogDisplayed;
+
+    NetworkReceiver networkReceiver;
+    IntentFilter filter = new IntentFilter();
+    WeatherManager weatherManager;  //managed thread pool to schedule jobs
+    LinkedList<WeatherResults> weatherList = new LinkedList<>();    //list of weather results
+
+    WeatherAdapter weatherAdapter;
+    RecyclerView weatherRecyclerView;
+
+    SharedPreferences cityPref;
+    SharedPreferences.Editor prefEditor;
+    Gson gson; //used to serialize and deserialize weatherlist into json string object
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,21 +65,30 @@ public class WeatherActivity extends AppCompatActivity {
             weatherManager = WeatherManager.getInstance();
         }
         postToUiHandler = WeatherManager.getInstance().getMainThreadHandler();
+        networkReceiver = NetworkReceiver.getInstance();
+        gson = new Gson();
 
         //setting up recycler view
-        RecyclerView weatherRecyclerView = findViewById(R.id.weather_recycler_view);
+        weatherRecyclerView = findViewById(R.id.weather_recycler_view);
         weatherRecyclerView.setHasFixedSize(true);
-        //initialise weather list
-        weatherList = new LinkedList<>();
+        RecyclerView.ItemDecoration itemDecoration =
+                new DividerItemDecoration(this,DividerItemDecoration.VERTICAL);
+        weatherRecyclerView.addItemDecoration(itemDecoration);
+        //retrieve saved weather results from SharedPreference
+        weatherList = loadPref();
         //connecting to layout manager
         weatherRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         //creating of adapter and link to recycler view
         weatherAdapter = new WeatherAdapter(this, weatherList);
         weatherRecyclerView.setAdapter(weatherAdapter);
-
-
+        //set ItemTouchHelper to delete item on recycle view
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(createCallBack());
+        itemTouchHelper.attachToRecyclerView(weatherRecyclerView);
     }
 
+    /**
+     * registers network receiver during onStart callback
+     */
     @Override
     public void onStart() {
         filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
@@ -72,6 +96,9 @@ public class WeatherActivity extends AppCompatActivity {
         super.onStart();
     }
 
+    /**
+     * deregisters network register during onStop callback
+     */
     @Override
     public void onStop() {
         unregisterReceiver(networkReceiver);
@@ -101,6 +128,8 @@ public class WeatherActivity extends AppCompatActivity {
 
     /**
      * Invokes input Alert Dialog when change cities is selected
+     * @param item: MenuItem
+     * @return boolean
      */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -127,12 +156,9 @@ public class WeatherActivity extends AppCompatActivity {
      * shows the input Alert Dialog with 3 edit text field  and two buttons for user to enter city name
      */
     private void showInputDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
-
-        builder.setTitle("Search by City");
-        builder.setMessage("Please enter cities:");
 
         final EditText inputOne = new EditText(this);
         inputOne.setInputType(InputType.TYPE_CLASS_TEXT);
@@ -152,27 +178,26 @@ public class WeatherActivity extends AppCompatActivity {
         inputThree.setHintTextColor(Color.GRAY);
         layout.addView(inputThree);
 
-        builder.setView(layout);
-
-        builder.setPositiveButton(R.string.change_city_dialog_go, new DialogInterface.OnClickListener() {
-            @Override
-            //change city when Go Button pressed
-            public void onClick(DialogInterface dialog, int id) {
-                updateWeather(inputOne.getText().toString(), inputTwo.getText().toString(),
-                        inputThree.getText().toString());
-            }
-        }).setNegativeButton(R.string.change_city_dialog_cancel, new DialogInterface.OnClickListener() {
-            @Override
-            //do nothing when Cancel Button pressed
-            public void onClick(DialogInterface dialogInterface, int id) {
-                //do nothing
-            }
-        });
-        builder.show();
+        new AlertDialog.Builder(this).setTitle("Search by City")
+                .setMessage("Please enter cities:").setView(layout)
+                .setPositiveButton(R.string.dialog_go, new DialogInterface.OnClickListener() {
+                    @Override
+                    //change city when Go Button pressed and store city in SharedPreference
+                    public void onClick(DialogInterface dialog, int id) {
+                        updateWeather(inputOne.getText().toString(), inputTwo.getText().toString(),
+                                inputThree.getText().toString());
+                    }
+                }).setNegativeButton(R.string.dialog_cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    //do nothing when Cancel Button pressed
+                    public void onClick(DialogInterface dialogInterface, int id) {
+                        //do nothing
+                    }
+                }).show();
     }
 
     /**
-     * Fetches the weather info of the three input cities
+     * fetches the weather info of the three input cities
      *
      * @param city1: String
      * @param city2: String
@@ -185,15 +210,8 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     /**
-     * Dynamically retrieves respective weather icon from strings.xml and updates UI into their respective views
-     */
-    private void updateUI() {
-        //TODO: FILL THIS UP
-    }
-
-    /**
-     * Creates a Runnable object to fetch weather information and post the result to the main thread
-     * to update UI
+     * Creates a Runnable object to fetch weather information, save in preference and
+     * post the result to the main thread to update UI
      *
      * @param city: String
      * @return Runnable
@@ -205,9 +223,9 @@ public class WeatherActivity extends AppCompatActivity {
                 Log.d("Network", "fetching " + city);
                 WeatherResults data = FetchWeather.getWeather(WeatherActivity.this, city);
                 if (data != null) {
-                    int currentSize = weatherAdapter.getItemCount();
                     weatherList.add(data);
-                    postToUiHandler.post(getUiRunnable(currentSize));
+                    saveList();
+                    postToUiHandler.post(getUiRunnable());
                 } else {
                     Log.d("Network", "no data fetched for" + city);
                 }
@@ -219,17 +237,23 @@ public class WeatherActivity extends AppCompatActivity {
      * Creates a Runnable object to update the UI fields based on the WeatherResults.
      * Toast error message is shown if the city's weather information cannot be fetched
      *
-     * @param pos: int
      * @return Runnable
      */
-    private Runnable getUiRunnable(final int pos) {
+    private Runnable getUiRunnable() {
         return new Runnable() {
             public void run() {
+                Log.d("Network", "updating UI");
                 weatherAdapter.notifyDataSetChanged();
+                weatherRecyclerView.scrollToPosition(weatherAdapter.getItemCount()-1);
             }
         };
     }
 
+    /**
+     * Displays a dialog when there is no internet connection
+     *
+     * @param context: Context
+     */
     public static void showOfflineDialog(Context context) {
         final Dialog dialog = new Dialog(context);
         dialog.requestWindowFeature(Window.FEATURE_LEFT_ICON);
@@ -265,5 +289,65 @@ public class WeatherActivity extends AppCompatActivity {
         dialogDisplayed = dialog;
     }
 
+    /**
+     * Saves the current weather list to SharedPreference
+     */
+    private void saveList() {
+        String json = gson.toJson(weatherList);
+        prefEditor.putString(CITY_PREF, json);
+        prefEditor.apply();
+    }
 
+    /**
+     * retrieves the list of saved weather information from SharedPreference
+     * @return LinkedList
+     */
+    private LinkedList<WeatherResults> loadPref() {
+        //retrieve stored cities
+        cityPref = PreferenceManager.getDefaultSharedPreferences(this);
+        prefEditor = cityPref.edit();
+        String json = cityPref.getString(CITY_PREF,null);
+        if (json != null) {
+             return gson.fromJson(json, new TypeToken<LinkedList<WeatherResults>>(){}.getType());
+        }
+        return null;
+    }
+
+    /**
+     * Set callback for when user swipes or moves item
+     */
+    private ItemTouchHelper.SimpleCallback createCallBack(){
+        return new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT|ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                int fromPos = viewHolder.getAdapterPosition();
+                int toPos = target.getAdapterPosition();
+                if (weatherAdapter.onItemMove(fromPos,toPos)) {
+                    weatherAdapter.notifyItemMoved(fromPos,toPos);
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+                final int position = viewHolder.getAdapterPosition();
+                new AlertDialog.Builder(WeatherActivity.this).setTitle("Delete City")
+                        .setMessage(" Remove "+ weatherAdapter.getItemAt(position).getCity() + " ?")
+                        .setPositiveButton(R.string.dialog_confirm, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                weatherList.remove(position);
+                                saveList();
+                                weatherAdapter.notifyItemRemoved(position);
+                            }})
+                        .setNegativeButton(R.string.dialog_cancel, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int id) {
+                                weatherAdapter.notifyItemChanged(position);
+                            }})
+                        .setCancelable(false).show();
+            }
+        };
+    }
 }

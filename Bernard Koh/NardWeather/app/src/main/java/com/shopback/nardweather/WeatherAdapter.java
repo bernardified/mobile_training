@@ -10,13 +10,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Create access to the all the weather results received, creates views for the items, and replaces
  * the content of some of the views with new data items when the original item is no longer available.
  */
-public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHolder> {
+public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHolder>  {
     private List<WeatherResults> dataSet;
     private Context context;
     private static final String WEATHER_FONT_PATH = "fonts/weathericons_regular_webfont.ttf";
@@ -96,6 +97,23 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHold
     @Override
     public int getItemCount() {
         return dataSet.size();
+    }
+
+    boolean onItemMove(int fromPosition, int toPosition) {
+        if (fromPosition < toPosition) {
+            for (int i = fromPosition; i < toPosition; i++) {
+                Collections.swap(dataSet, i,i + 1);
+            }
+        } else {
+            for (int i = fromPosition; i > toPosition; i--) {
+                Collections.swap(dataSet, i, i-1);
+            }
+        }
+        return true;
+    }
+
+    public WeatherResults getItemAt(int position) {
+        return dataSet.get(position);
     }
 
 }
