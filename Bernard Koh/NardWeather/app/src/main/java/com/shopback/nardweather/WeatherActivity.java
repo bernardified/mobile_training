@@ -31,6 +31,7 @@ import android.support.v7.widget.RecyclerView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.util.Collections;
 import java.util.LinkedList;
 
 
@@ -314,21 +315,36 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     /**
-     * Set callback for when user swipes or moves item
+     * sets behavior for move items around and also swiping to delete
+     * @return ItemTouchHelper.SimpleCallback
      */
     private ItemTouchHelper.SimpleCallback createCallBack(){
-        return new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT|ItemTouchHelper.RIGHT) {
+        return new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP|ItemTouchHelper.DOWN, ItemTouchHelper.LEFT|ItemTouchHelper.RIGHT) {
+
+            /**
+             * Swaps items in recycle view and updates sharedpreference of new positions
+             * @param recyclerView
+             * @param viewHolder
+             * @param target
+             * @return boolean
+             */
             @Override
             public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
                 int fromPos = viewHolder.getAdapterPosition();
                 int toPos = target.getAdapterPosition();
-                if (weatherAdapter.onItemMove(fromPos,toPos)) {
-                    weatherAdapter.notifyItemMoved(fromPos,toPos);
-                    return true;
-                }
-                return false;
+                Collections.swap(weatherList, fromPos, toPos);
+                saveList();
+                weatherAdapter.onItemMove(fromPos,toPos);
+                weatherAdapter.notifyItemMoved(fromPos,toPos);
+                return true;
             }
 
+            /**
+             * Delete item from weather list and updates the sharedpreference. Alert dialog pops up
+             * to confirm deletion
+             * @param viewHolder: ViewHolder
+             * @param direction: int
+             */
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
                 final int position = viewHolder.getAdapterPosition();

@@ -99,20 +99,12 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHold
         return dataSet.size();
     }
 
-    boolean onItemMove(int fromPosition, int toPosition) {
-        if (fromPosition < toPosition) {
-            for (int i = fromPosition; i < toPosition; i++) {
-                Collections.swap(dataSet, i,i + 1);
-            }
-        } else {
-            for (int i = fromPosition; i > toPosition; i--) {
-                Collections.swap(dataSet, i, i-1);
-            }
-        }
-        return true;
+    void onItemMove(int fromPosition, int toPosition) {
+        WeatherResults temp = dataSet.remove(fromPosition);
+        dataSet.add(toPosition > fromPosition ? toPosition-1 : toPosition, temp);
     }
 
-    public WeatherResults getItemAt(int position) {
+    WeatherResults getItemAt(int position) {
         return dataSet.get(position);
     }
 
