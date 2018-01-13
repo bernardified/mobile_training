@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 import android.widget.Toast;
 
 import java.util.concurrent.BlockingQueue;
@@ -46,13 +45,21 @@ class WeatherManager {
                 errorMessage = b.getString("errorMessage");
                 if(inputMessage.what == NetworkUtil.NETWORK_ERROR_ID) {
                     WeatherActivity.showOfflineDialog(activity);
+
                 } else if (inputMessage.what == WeatherActivity.INVALID_CITY) {
-                    Toast.makeText(activity, errorMessage + " not found!", Toast.LENGTH_LONG).show();
-                } else {
+                    Toast.makeText(activity, errorMessage + " not found!", Toast.LENGTH_SHORT).show();
+
+                } else if (inputMessage.what == NetworkUtil.NETWORK_NO_ERROR_ID){
                     WeatherActivity.dismissDialog();
                    // Toast.makeText(activity, errorMessage, Toast.LENGTH_SHORT).show();
+                } else if (inputMessage.what == WeatherActivity.DUPLICATE_CITY) {
+                    Toast.makeText(activity, errorMessage + " already exists!", Toast.LENGTH_SHORT).show();
                 }
-                activity.invalidateOptionsMenu();
+
+                if (inputMessage.what == NetworkUtil.NETWORK_ERROR_ID ||
+                        inputMessage.what == NetworkUtil.NETWORK_NO_ERROR_ID) {
+                    activity.invalidateOptionsMenu();
+                }
 
             }
         };

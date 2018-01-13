@@ -18,7 +18,7 @@ import java.util.Locale;
 
 class FetchWeather {
 
-    private static final String EMPTY_STRING = "";
+    public static final String DEFAULT_SINGAPORE = "Singapore, SG";
 
     /**
      * Retrieves city's weather information from openweathermap.org. The JSONObject is null if the
@@ -41,6 +41,11 @@ class FetchWeather {
             * */
             if (NetworkReceiver.getInstance().networkStatus == NetworkUtil.NETWORK_ERROR_ID || city.equals("")) {
                 return null;
+            }
+
+            if (city.equalsIgnoreCase("singapore") ||
+                    city.equalsIgnoreCase("singapore,my")) {
+                city = DEFAULT_SINGAPORE;
             }
 
             String fullString = String.format(OPEN_WEATHER_MAP_API_CALL, city,

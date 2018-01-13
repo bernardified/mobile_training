@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.NetworkInfo;
 import android.os.Handler;
+import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -34,10 +35,12 @@ import com.google.gson.reflect.TypeToken;
 
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.ListIterator;
 
 
 public class WeatherActivity extends AppCompatActivity {
     public static final int INVALID_CITY = 3;
+    public static final int DUPLICATE_CITY = 4;
     public static final String CITY_PREF = "City";
     public static Handler postToUiHandler;
 
@@ -229,7 +232,7 @@ public class WeatherActivity extends AppCompatActivity {
             public void run() {
                 Log.d("Network", "fetching " + city);
                 WeatherResults data = FetchWeather.getWeather(WeatherActivity.this, city);
-                if (data != null) {
+                if (data != null && !isDuplicating(data.getCity())) {
                     weatherList.add(data);
                     postToUiHandler.post(getUiRunnable());
                 } else {
@@ -258,58 +261,10 @@ public class WeatherActivity extends AppCompatActivity {
         };
     }
 
-    /**
-     * Displays a dialog when there is no internet connection
-     *
-     * @param context: Context
-     */
-    public static void showOfflineDialog(Context context) {
-        final Dialog dialog = new Dialog(context);
-        dialog.requestWindowFeature(Window.FEATURE_LEFT_ICON);
-        dialog.setContentView(R.layout.offline_dialog);
-        dialog.setCanceledOnTouchOutside(false);
-        dialog.setCancelable(true);
-
-        Window window = dialog.getWindow();
-        window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-        window.setGravity(Gravity.BOTTOM);
-        window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
-
-        Button cancelButton = dialog.findViewById(R.id.offline_dialog_cancel_button);
-
-        cancelButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                dialog.dismiss();
-            }
-        });
-
-        dialog.show();
-        setDialog(dialog);
-    }
-
-    public static void dismissDialog() {
-        if (dialogDisplayed != null) {
-            dialogDisplayed.dismiss();
-        }
-    }
-
-    private static void setDialog(Dialog dialog){
-        dialogDisplayed = dialog;
-    }
-
-    /**
-     * Saves the current weather list to SharedPreference
-     */
-    private void saveList() {
-        String json = gson.toJson(weatherList);
-        prefEditor.putString(CITY_PREF, json);
-        prefEditor.apply();
-    }
 
     /**
      * retrieves the list of saved weather information from SharedPreference
-     * @return LinkedList
+     * @return stored LinkedList<WeatherResult> else returns a new empty LinkedList<WeatherResult>
      */
     private LinkedList<WeatherResults> loadPref() {
         //retrieve stored cities
@@ -320,6 +275,42 @@ public class WeatherActivity extends AppCompatActivity {
             return gson.fromJson(json, new TypeToken<LinkedList<WeatherResults>>(){}.getType());
         }
         return new LinkedList<>();
+    }
+
+    /**
+     * Iterates through the weather list and checks if the input city is already in the list
+     * @param city: String
+     * @return true if there is a duplicate else return false
+     */
+    private boolean isDuplicating(String city) {
+        Message message;
+        Bundle b;
+
+        ListIterator<WeatherResults> iterator = weatherList.listIterator();
+        WeatherResults next;
+        while (iterator.hasNext()) {
+            next = iterator.next();
+            if (next.getCity().equals(city)) {
+                message = new Message();
+                b = new Bundle();
+                message.what = WeatherActivity.DUPLICATE_CITY;
+                b.putString("errorMessage", next.getCity());
+                message.setData(b);
+                WeatherManager.getInstance().getMainThreadHandler().sendMessage(message);
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    /**
+     * Saves the current weather list to SharedPreference
+     */
+    private void saveList() {
+        String json = gson.toJson(weatherList);
+        prefEditor.putString(CITY_PREF, json);
+        prefEditor.apply();
     }
 
     /**
@@ -391,9 +382,56 @@ public class WeatherActivity extends AppCompatActivity {
             }
         };
     }
+
+    /**
+     * Displays a dialog when there is no internet connection
+     *
+     * @param context: Context
+     */
+    public static void showOfflineDialog(Context context) {
+        final Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_LEFT_ICON);
+        dialog.setContentView(R.layout.offline_dialog);
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.setCancelable(true);
+
+        Window window = dialog.getWindow();
+        window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        window.setGravity(Gravity.BOTTOM);
+        window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+
+        Button cancelButton = dialog.findViewById(R.id.offline_dialog_cancel_button);
+
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+        setDialog(dialog);
+    }
+
+    public static void dismissDialog() {
+        if (dialogDisplayed != null) {
+            dialogDisplayed.dismiss();
+        }
+    }
+
+    private static void setDialog(Dialog dialog){
+        dialogDisplayed = dialog;
+    }
+
+    public static Dialog getDialog() {
+        return dialogDisplayed;
+    }
+
 }
 
 
 //TODO: Refresh feature
-//TODO: check duplicate entries
 //TODO: clear all
+//TODO: timezone
+//TODO: error message util class
+//TODO: scroll to duplciated weather in recycler view
