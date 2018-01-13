@@ -2,6 +2,7 @@ package com.shopback.nardweather;
 
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -9,8 +10,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -49,13 +48,7 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHold
         this.context = context;
     }
 
-    private Context getContext() {
-        return context;
-    }
 
-    /*
-    Primary methods of adapter
-     */
     //inflate the item layout and create the holder
     @Override
     public WeatherAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -101,11 +94,24 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHold
 
     void onItemMove(int fromPosition, int toPosition) {
         WeatherResults temp = dataSet.remove(fromPosition);
-        dataSet.add(toPosition > fromPosition ? toPosition-1 : toPosition, temp);
+        //moving down
+        if (toPosition > fromPosition) {
+            dataSet.add(toPosition-1, temp);
+        } else {    //moving up
+            dataSet.add(fromPosition, temp);
+        }
     }
 
     WeatherResults getItemAt(int position) {
         return dataSet.get(position);
+    }
+
+    void onSelectedItem(RecyclerView.ViewHolder viewHolder) {
+        viewHolder.itemView.setBackgroundColor(Color.LTGRAY);
+    }
+
+    void onClearViewItem(RecyclerView.ViewHolder viewHolder) {
+        viewHolder.itemView.setBackgroundColor(Color.WHITE);
     }
 
 }

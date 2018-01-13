@@ -27,6 +27,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.support.v7.widget.RecyclerView;
+import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -41,24 +42,27 @@ public class WeatherActivity extends AppCompatActivity {
     public static Handler postToUiHandler;
 
     static Dialog dialogDisplayed;
+    TextView emptyTextView;
 
     NetworkReceiver networkReceiver;
     IntentFilter filter = new IntentFilter();
     WeatherManager weatherManager;  //managed thread pool to schedule jobs
-    LinkedList<WeatherResults> weatherList = new LinkedList<>();    //list of weather results
+    LinkedList<WeatherResults> weatherList;   //list of weather results
 
     WeatherAdapter weatherAdapter;
     RecyclerView weatherRecyclerView;
 
     SharedPreferences cityPref;
     SharedPreferences.Editor prefEditor;
-    Gson gson; //used to serialize and deserialize weatherlist into json string object
+    Gson gson; //used to serialize and deserialize weatherList into json string object
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather_recycler);
+
+        emptyTextView = findViewById(R.id.weather_list_empty);
 
         if (!WeatherManager.hasInstance) {
             weatherManager = WeatherManager.getInstance(WeatherActivity.this);
@@ -113,6 +117,7 @@ public class WeatherActivity extends AppCompatActivity {
 
     @Override
     public void onResume() {
+        emptyTextView.setVisibility(weatherList.isEmpty() ? View.INVISIBLE : View.INVISIBLE);
         super.onResume();
     }
 
@@ -198,7 +203,7 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     /**
-     * fetches the weather info of the three input cities
+     * Fetches the weather info of the three input cities
      *
      * @param city1: String
      * @param city2: String
@@ -208,11 +213,12 @@ public class WeatherActivity extends AppCompatActivity {
         weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city1));
         weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city2));
         weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city3));
+        saveList();
     }
 
     /**
      * Creates a Runnable object to fetch weather information, save in preference and
-     * post the result to the main thread to update UI
+     * post the result to the main thread to update UI. Duplicated cities will not be fetched
      *
      * @param city: String
      * @return Runnable
@@ -225,7 +231,6 @@ public class WeatherActivity extends AppCompatActivity {
                 WeatherResults data = FetchWeather.getWeather(WeatherActivity.this, city);
                 if (data != null) {
                     weatherList.add(data);
-                    saveList();
                     postToUiHandler.post(getUiRunnable());
                 } else {
                     Log.d("Network", "no data fetched for" + city);
@@ -244,6 +249,9 @@ public class WeatherActivity extends AppCompatActivity {
         return new Runnable() {
             public void run() {
                 Log.d("Network", "updating UI");
+                if (!weatherList.isEmpty()) {
+                    emptyTextView.setVisibility(View.INVISIBLE);
+                }
                 weatherAdapter.notifyDataSetChanged();
                 weatherRecyclerView.scrollToPosition(weatherAdapter.getItemCount()-1);
             }
@@ -280,7 +288,7 @@ public class WeatherActivity extends AppCompatActivity {
         setDialog(dialog);
     }
 
-    public static void dismissDialg() {
+    public static void dismissDialog() {
         if (dialogDisplayed != null) {
             dialogDisplayed.dismiss();
         }
@@ -309,9 +317,9 @@ public class WeatherActivity extends AppCompatActivity {
         prefEditor = cityPref.edit();
         String json = cityPref.getString(CITY_PREF,null);
         if (json != null) {
-             return gson.fromJson(json, new TypeToken<LinkedList<WeatherResults>>(){}.getType());
+            return gson.fromJson(json, new TypeToken<LinkedList<WeatherResults>>(){}.getType());
         }
-        return null;
+        return new LinkedList<>();
     }
 
     /**
@@ -323,19 +331,19 @@ public class WeatherActivity extends AppCompatActivity {
 
             /**
              * Swaps items in recycle view and updates sharedpreference of new positions
-             * @param recyclerView
-             * @param viewHolder
-             * @param target
+             * @param recyclerView: RecyclerView
+             * @param viewHolder: ViewHolder
+             * @param target: ViewHolder
              * @return boolean
              */
             @Override
             public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
                 int fromPos = viewHolder.getAdapterPosition();
                 int toPos = target.getAdapterPosition();
-                Collections.swap(weatherList, fromPos, toPos);
-                saveList();
                 weatherAdapter.onItemMove(fromPos,toPos);
                 weatherAdapter.notifyItemMoved(fromPos,toPos);
+                Collections.swap(weatherList, fromPos, toPos);
+                saveList();
                 return true;
             }
 
@@ -354,8 +362,12 @@ public class WeatherActivity extends AppCompatActivity {
                             @Override
                             public void onClick(DialogInterface dialog, int id) {
                                 weatherList.remove(position);
-                                saveList();
                                 weatherAdapter.notifyItemRemoved(position);
+                                saveList();
+
+                                if (weatherList.isEmpty()) {
+                                    emptyTextView.setVisibility(View.VISIBLE);
+                                }
                             }})
                         .setNegativeButton(R.string.dialog_cancel, new DialogInterface.OnClickListener() {
                             @Override
@@ -364,6 +376,24 @@ public class WeatherActivity extends AppCompatActivity {
                             }})
                         .setCancelable(false).show();
             }
+
+            @Override
+            public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
+                if (actionState != ItemTouchHelper.ACTION_STATE_IDLE) {
+                    weatherAdapter.onSelectedItem(viewHolder);
+                }
+            }
+
+            @Override
+            public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+                super.clearView(recyclerView, viewHolder);
+                weatherAdapter.onClearViewItem(viewHolder);
+            }
         };
     }
 }
+
+
+//TODO: Refresh feature
+//TODO: check duplicate entries
+//TODO: clear all
