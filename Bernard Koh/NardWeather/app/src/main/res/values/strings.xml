@@ -1,17 +1,20 @@
 <resources>
+    <!--API Key-->
+    <string name="open_weather_map_api_key">1bab5a3cc4e7423879bea7b2dea70edc</string>
+
     <string name="app_name">NardWeather</string>
     <string name="add_cities"> Add Cities</string>
-    <string name="open_weather_map_api_key">1bab5a3cc4e7423879bea7b2dea70edc</string>
+
     <string name="city_not_found">City not found!</string>
-    <string name="city_name_example">Eg. Beijing</string>
+    <string name="city_name_example">Eg. Hanoi</string>
     <string name="city_name_example_two">Eg.Banda Aceh</string>
     <string name="city_name_example_three">Eg. San Antonio, US</string>
-
     <string name="empty_list">Tap on &quot;Add Cities&quot; to add your favourite city!</string>
     <string name="dialog_go">Go</string>
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_confirm">Confirm</string>
 
+    <!--Weather Icons-->
     <string name="wi_owm_night_200">&#xf02d;</string>
     <string name="wi_owm_night_201">&#xf02d;</string>
     <string name="wi_owm_night_202">&#xf02d;</string>

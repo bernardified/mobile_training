@@ -166,6 +166,7 @@ public class WeatherActivity extends AppCompatActivity {
      */
     private void showInputDialog() {
 
+        //TODO: convert to layout xml format
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
 
@@ -216,6 +217,9 @@ public class WeatherActivity extends AppCompatActivity {
         weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city1));
         weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city2));
         weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city3));
+        while (weatherManager.getFetchWeatherJobs().getActiveCount() != 0) {
+            Log.d("updateWeather", "jobs not completed");
+        }
         saveList();
     }
 
@@ -230,10 +234,10 @@ public class WeatherActivity extends AppCompatActivity {
         return new Runnable() {
             @Override
             public void run() {
-                Log.d("Network", "fetching " + city);
                 WeatherResults data = FetchWeather.getWeather(WeatherActivity.this, city);
                 if (data != null && !isDuplicating(data.getCity())) {
                     weatherList.add(data);
+                    Log.d("debug1", "adding " + weatherList.getLast().getCity() +" to list");
                     postToUiHandler.post(getUiRunnable());
                 } else {
                     Log.d("Network", "no data fetched for" + city);
@@ -294,7 +298,7 @@ public class WeatherActivity extends AppCompatActivity {
                 message = new Message();
                 b = new Bundle();
                 message.what = WeatherActivity.DUPLICATE_CITY;
-                b.putString("errorMessage", next.getCity());
+                b.putString("errorMessage", next.getCity()  + " already exists!");
                 message.setData(b);
                 WeatherManager.getInstance().getMainThreadHandler().sendMessage(message);
                 return true;
@@ -357,6 +361,7 @@ public class WeatherActivity extends AppCompatActivity {
                                 saveList();
 
                                 if (weatherList.isEmpty()) {
+                                    Log.d("debug2", "setting empty visibility");
                                     emptyTextView.setVisibility(View.VISIBLE);
                                 }
                             }})
@@ -434,4 +439,5 @@ public class WeatherActivity extends AppCompatActivity {
 //TODO: clear all
 //TODO: timezone
 //TODO: error message util class
-//TODO: scroll to duplciated weather in recycler view
+//TODO: scroll to duplicated weather in recycler view
+//TODO: why broadcast receiver fails when phone goes to sleep?

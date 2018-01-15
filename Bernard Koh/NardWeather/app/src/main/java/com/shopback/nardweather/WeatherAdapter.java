@@ -70,7 +70,6 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHold
         WeatherResults results = dataSet.get(position);
 
         //Set item views based on views and data model
-        Log.d("updateUI", "updating UI");
         holder.cityField.setText(results.getCity());
         holder.lastUpdatedField.setText(results.getLastUpdated());
         holder.temperatureField.setText(results.getTemperature());

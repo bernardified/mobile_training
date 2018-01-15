@@ -90,7 +90,7 @@ class FetchWeather {
             b = new Bundle();
             Log.d("Get-Response", "City not found");
             errorMessage.what = WeatherActivity.INVALID_CITY;
-            b.putString("errorMessage", city);
+            b.putString("errorMessage", city + "'s information cannot be found");
             errorMessage.setData(b);
             WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
         }
