@@ -34,6 +34,8 @@ import android.widget.TextView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.ListIterator;
@@ -197,8 +199,11 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     //change city when Go Button pressed and store city in SharedPreference
                     public void onClick(DialogInterface dialog, int id) {
-                        updateWeather(inputOne.getText().toString(), inputTwo.getText().toString(),
-                                inputThree.getText().toString());
+                        updateWeather(new ArrayList<>(Arrays.asList(
+                                inputOne.getText().toString(),
+                                inputTwo.getText().toString(),
+                                inputThree.getText().toString()))
+                        );
                     }
                 }).setNegativeButton(R.string.dialog_cancel, new DialogInterface.OnClickListener() {
                     @Override
@@ -212,14 +217,12 @@ public class WeatherActivity extends AppCompatActivity {
     /**
      * Fetches the weather info of the three input cities
      *
-     * @param city1: String
-     * @param city2: String
-     * @param city3: String
+     * @param inputList: List retrieved from UI input
      */
-    private void updateWeather(final String city1, final String city2, final String city3) {
-        weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city1));
-        weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city2));
-        weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city3));
+    private void updateWeather(ArrayList<String> inputList) {
+        for (String city: inputList) {
+            weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city));
+        }
     }
 
     /**
