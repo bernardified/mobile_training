@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Message;
@@ -99,7 +100,7 @@ public class WeatherActivity extends AppCompatActivity {
      */
     @Override
     public void onStart() {
-        filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(networkReceiver, filter);
         Log.d("Network", "receiver registered");
         super.onStart();
@@ -122,7 +123,7 @@ public class WeatherActivity extends AppCompatActivity {
 
     @Override
     public void onResume() {
-        emptyTextView.setVisibility(weatherList.isEmpty() ? View.INVISIBLE : View.INVISIBLE);
+        emptyTextView.setVisibility(weatherList.isEmpty() ? View.VISIBLE : View.INVISIBLE);
         super.onResume();
     }
 
@@ -219,10 +220,6 @@ public class WeatherActivity extends AppCompatActivity {
         weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city1));
         weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city2));
         weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city3));
-        while (weatherManager.getFetchWeatherJobs().getActiveCount() != 0) {
-            Log.d("updateWeather", "jobs not completed");
-        }
-        saveList();
     }
 
     /**
@@ -239,6 +236,7 @@ public class WeatherActivity extends AppCompatActivity {
                 WeatherResults data = FetchWeather.getWeather(WeatherActivity.this, city);
                 if (data != null && !isDuplicating(data.getCity())) {
                     weatherList.add(data);
+                    saveList();
                     Log.d("debug1", "adding " + weatherList.getLast().getCity() +" to list");
                     postToUiHandler.post(getUiRunnable());
                 } else {
@@ -258,11 +256,11 @@ public class WeatherActivity extends AppCompatActivity {
         return new Runnable() {
             public void run() {
                 Log.d("Network", "updating UI");
+                weatherAdapter.notifyDataSetChanged();
+                weatherRecyclerView.scrollToPosition(weatherAdapter.getItemCount()-1);
                 if (!weatherList.isEmpty()) {
                     emptyTextView.setVisibility(View.INVISIBLE);
                 }
-                weatherAdapter.notifyDataSetChanged();
-                weatherRecyclerView.scrollToPosition(weatherAdapter.getItemCount()-1);
             }
         };
     }
@@ -278,6 +276,7 @@ public class WeatherActivity extends AppCompatActivity {
         prefEditor = cityPref.edit();
         String json = cityPref.getString(CITY_PREF,null);
         if (json != null) {
+            emptyTextView.setVisibility(View.VISIBLE);
             return gson.fromJson(json, new TypeToken<LinkedList<WeatherResults>>(){}.getType());
         }
         return new LinkedList<>();
@@ -313,7 +312,7 @@ public class WeatherActivity extends AppCompatActivity {
     /**
      * Saves the current weather list to SharedPreference
      */
-    private void saveList() {
+    private synchronized  void saveList() {
         String json = gson.toJson(weatherList);
         prefEditor.putString(CITY_PREF, json);
         prefEditor.apply();
