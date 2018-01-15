@@ -101,6 +101,7 @@ public class WeatherActivity extends AppCompatActivity {
     public void onStart() {
         filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
         registerReceiver(networkReceiver, filter);
+        Log.d("Network", "receiver registered");
         super.onStart();
     }
 
@@ -110,6 +111,7 @@ public class WeatherActivity extends AppCompatActivity {
     @Override
     public void onStop() {
         unregisterReceiver(networkReceiver);
+        Log.d("Network", "receiver unregistered");
         super.onStop();
     }
 
@@ -422,6 +424,7 @@ public class WeatherActivity extends AppCompatActivity {
         if (dialogDisplayed != null) {
             dialogDisplayed.dismiss();
         }
+        dialogDisplayed = null;
     }
 
     private static void setDialog(Dialog dialog){
