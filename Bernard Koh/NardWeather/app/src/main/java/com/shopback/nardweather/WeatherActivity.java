@@ -34,10 +34,14 @@ import android.widget.TextView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ListIterator;
 
 
@@ -258,30 +262,43 @@ public class WeatherActivity extends AppCompatActivity {
     public void refreshWeather() {
         //finds cities with invalid weather information
         ListIterator<String> iterator = cityList.listIterator();
-        LinkedList<String> refreshList = new LinkedList<>();
-        while (iterator.hasNext()) {
-            String city = iterator.next();
-            WeatherResults results = weatherCache.get(city);
-            if (results.getResultType() == WeatherResults.ResultType.OFFLINE) {
-                refreshList.add(city);
-            }
-        }
+        LinkedList<String> refreshList = chooseCitiesToRefresh(iterator);
+
         //TODO:: check difference bewteen last updated time and current time. update those that havent been updated for too long
         iterator = refreshList.listIterator();
         while (iterator.hasNext()) {
             weatherCache.remove(cityList.remove(iterator.next()));
         }
-        Log.d("Refresh Weather", "refreshing list");
         updateWeather(refreshList);
-
     }
 
-    private void refreshOfflineWeather() {
-
-    }
-
-    private void refreshOutdatedWeather() {
-
+    private LinkedList<String> chooseCitiesToRefresh(ListIterator<String> iterator) {
+        LinkedList<String> list = new LinkedList<>();
+        while (iterator.hasNext()) {
+            String city = iterator.next();
+            WeatherResults results = weatherCache.get(city);
+            if (results.getResultType() == WeatherResults.ResultType.OFFLINE) {
+                list.add(city);
+                Log.d("Refreshing", city);
+            } else {
+                long currTime = new Date().getTime();
+                long prevTime, diff, minutes;
+                DateFormat formatter = new SimpleDateFormat("MMM dd, yyyy HH:mm:ss aaa");
+                try {
+                    prevTime = formatter .parse(results.getLastUpdated()).getTime();
+                    Log.d("Time prev", ((Long)prevTime).toString());
+                    diff = currTime - prevTime;
+                    minutes = diff/(60*1000) % 60;
+                    if (minutes >= 60) {
+                        list.add(city);
+                        Log.d("Refreshing", city);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return list;
     }
 
     /**
@@ -541,5 +558,4 @@ public class WeatherActivity extends AppCompatActivity {
 //TODO: error message util class
 //TODO: scroll to duplicated weather in recycler view
 //question:refreshWeather fails when previously there is no internet. there is lag between the firing of the connectivity_change intent by the system.
-//question:
 

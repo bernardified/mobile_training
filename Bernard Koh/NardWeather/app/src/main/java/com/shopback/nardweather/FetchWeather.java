@@ -18,7 +18,7 @@ import java.util.Locale;
 
 class FetchWeather {
 
-    public static final String DEFAULT_SINGAPORE = "Singapore, SG";
+    static final String DEFAULT_SINGAPORE = "Singapore, SG";
 
     /**
      * Retrieves city's weather information from openweathermap.org. The JSONObject is null if the
