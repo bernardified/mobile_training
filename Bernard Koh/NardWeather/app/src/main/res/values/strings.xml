@@ -13,6 +13,7 @@
     <string name="dialog_go">Go</string>
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_confirm">Confirm</string>
+    <string name="last_updated_offline">Last Updated: Not available at the moment</string>
 
     <!--Weather Icons-->
     <string name="wi_owm_night_200">&#xf02d;</string>

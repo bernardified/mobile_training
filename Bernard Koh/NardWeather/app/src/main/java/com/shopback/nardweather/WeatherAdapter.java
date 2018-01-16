@@ -8,7 +8,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +38,6 @@ public class WeatherAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Context context = parent.getContext();
-        RecyclerView.ViewHolder viewHolder;
         LayoutInflater inflater = LayoutInflater.from(context);
 
         switch (viewType) {
@@ -102,7 +100,7 @@ public class WeatherAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         //Set item views based on views and data model
         holder.getCityField().setText(results.getCity());
-        holder.getLastUpdatedField().setText("Last Updated: Not available at the moment");
+        holder.getLastUpdatedField().setText(R.string.last_updated_offline);
     }
 
     //determine the number of items
@@ -137,5 +135,4 @@ public class WeatherAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     void onClearViewItem(RecyclerView.ViewHolder viewHolder) {
         viewHolder.itemView.setBackgroundColor(Color.WHITE);
     }
-
 }

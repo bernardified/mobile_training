@@ -10,6 +10,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -53,6 +54,7 @@ public class WeatherActivity extends AppCompatActivity {
 
     NetworkReceiver networkReceiver;
     IntentFilter filter = new IntentFilter();
+
     WeatherManager weatherManager;  //managed thread pool to schedule jobs
     LinkedList<String> cityList;   //list of cities
     HashMap<String, WeatherResults> weatherCache = new HashMap<>();   //cache of weather results
@@ -65,6 +67,8 @@ public class WeatherActivity extends AppCompatActivity {
     SharedPreferences.Editor cityEditor;
     SharedPreferences.Editor weatherEditor;
     Gson gson; //used to serialize and deserialize weatherList into json string object
+
+    SwipeRefreshLayout swipeContainer;
 
 
     @Override
@@ -99,6 +103,18 @@ public class WeatherActivity extends AppCompatActivity {
         //set ItemTouchHelper to delete item on recycle view
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(createCallBack());
         itemTouchHelper.attachToRecyclerView(weatherRecyclerView);
+
+        swipeContainer = findViewById(R.id.swipeContainer);
+        swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                refreshWeather();
+                weatherAdapter.notifyDataSetChanged();
+                swipeContainer.setRefreshing(false);
+            }
+        });
+
+        swipeContainer.setColorSchemeResources(android.R.color.holo_red_dark);
     }
 
     /**
@@ -162,6 +178,7 @@ public class WeatherActivity extends AppCompatActivity {
         return false;
     }
 
+    //disable the add cities button if there is no internet connection. commented out for now
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
       /*  NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(this);
@@ -238,7 +255,7 @@ public class WeatherActivity extends AppCompatActivity {
      * Refreshes weather information and updates cache. Updates those cities that previously could not
      * retrieve weather information too
      */
-    private void refreshWeather() {
+    public void refreshWeather() {
         //finds cities with invalid weather information
         ListIterator<String> iterator = cityList.listIterator();
         LinkedList<String> refreshList = new LinkedList<>();
@@ -506,7 +523,7 @@ public class WeatherActivity extends AppCompatActivity {
         });
 
         dialog.show();
-        setDialog(dialog);
+        dialogDisplayed = dialog;
     }
 
     public static void dismissDialog() {
@@ -516,20 +533,13 @@ public class WeatherActivity extends AppCompatActivity {
             Log.d("Dialog", "dialog is null");
         }
     }
-
-    private static void setDialog(Dialog dialog){
-        dialogDisplayed = dialog;
-    }
-
-    public static Dialog getDialog() {
-        return dialogDisplayed;
-    }
-
 }
 
 
-//TODO: Refresh feature
+//TODO: auto refresh when internet online
 //TODO: clear all
 //TODO: error message util class
 //TODO: scroll to duplicated weather in recycler view
-//TODO: refreshWeather fails when previously there is no internet. there is lag between the firing of the connectivity_change intent by the system.
+//question:refreshWeather fails when previously there is no internet. there is lag between the firing of the connectivity_change intent by the system.
+//question:
+

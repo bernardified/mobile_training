@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 class WeatherManager {
 
     private final ThreadPoolExecutor fetchWeatherJobs;
-//    private final ThreadPoolExecutor refreshWeatherJobs;
+    private final ThreadPoolExecutor refreshWeatherJobs;
     private static final int KEEP_ALIVE_TIME = 1;
     private static final TimeUnit KEEP_ALIVE_TIME_UNIT = TimeUnit.SECONDS;
     private static int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
@@ -37,11 +37,11 @@ class WeatherManager {
 
         //initialize thread pool to run multiple fetch weather jobs
         BlockingQueue<Runnable> fetchWeatherQueue = new LinkedBlockingQueue<Runnable>();
-//        BlockingQueue<Runnable> refreshWeatherQueue = new LinkedBlockingQueue<>();
+        BlockingQueue<Runnable> refreshWeatherQueue = new LinkedBlockingQueue<>();
         fetchWeatherJobs = new ThreadPoolExecutor(NUMBER_OF_CORES, NUMBER_OF_CORES,
                 KEEP_ALIVE_TIME, KEEP_ALIVE_TIME_UNIT, fetchWeatherQueue);
-//        refreshWeatherJobs = new ThreadPoolExecutor(NUMBER_OF_CORES, NUMBER_OF_CORES,
-//                KEEP_ALIVE_TIME, KEEP_ALIVE_TIME_UNIT, refreshWeatherQueue);
+        refreshWeatherJobs = new ThreadPoolExecutor(NUMBER_OF_CORES, NUMBER_OF_CORES,
+                KEEP_ALIVE_TIME, KEEP_ALIVE_TIME_UNIT, refreshWeatherQueue);
 
         mainThreadHandler = new Handler(Looper.getMainLooper()) {
             @Override
@@ -88,7 +88,7 @@ class WeatherManager {
         return fetchWeatherJobs;
     }
 
-//    ThreadPoolExecutor getRefreshWeatherJobs() {return refreshWeatherJobs; }
+    ThreadPoolExecutor getRefreshWeatherJobs() {return refreshWeatherJobs; }
 
     Handler getMainThreadHandler() {
         return mainThreadHandler;
