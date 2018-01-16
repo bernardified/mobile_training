@@ -41,7 +41,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.ListIterator;
 
 
@@ -185,14 +184,18 @@ public class WeatherActivity extends AppCompatActivity {
     //disable the add cities button if there is no internet connection. commented out for now
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-      /*  NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(this);
+        NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(this);
         if (networkInfo != null && networkInfo.isConnected()) {
-            menu.findItem(R.id.add_cities).setEnabled(true);
-        } else {
+           // menu.findItem(R.id.add_cities).setEnabled(true);
+            //TODO:: find a better place to put this
+            refreshWeather();
+        }
+
+        /*else {
             menu.findItem(R.id.add_cities).setEnabled(false);
         }
-        super.onPrepareOptionsMenu(menu);
-      */
+        super.onPrepareOptionsMenu(menu);*/
+
         return true;
     }
 
@@ -553,9 +556,7 @@ public class WeatherActivity extends AppCompatActivity {
 }
 
 
-//TODO: auto refresh when internet online
 //TODO: clear all
 //TODO: error message util class
-//TODO: scroll to duplicated weather in recycler view
 //question:refreshWeather fails when previously there is no internet. there is lag between the firing of the connectivity_change intent by the system.
 
