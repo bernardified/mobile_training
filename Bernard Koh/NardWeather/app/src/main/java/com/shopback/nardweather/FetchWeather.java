@@ -36,11 +36,16 @@ class FetchWeather {
         String OPEN_WEATHER_MAP_API_CALL =
                 "http://api.openweathermap.org/data/2.5/weather?q=%s&units=metric&appid=%s";
         try {
-            /*when there is no network connection or empty string where user did not enter any input
-            * have to recheck network status as fetch weather is called before receiver is done
-            * */
-            if (NetworkReceiver.getInstance().networkStatus == NetworkUtil.NETWORK_ERROR_ID || city.equals("")) {
+            //ignore empty input
+            if(city.equals("")) {
                 return null;
+            }
+
+            if (NetworkReceiver.getInstance().getNetworkStatus() == NetworkUtil.NETWORK_ERROR_ID) {
+                Log.d("getWeather", "no network");
+                WeatherResults result = new WeatherResults(city, "","","","");
+                result.setResulType(WeatherResults.ResultType.OFFLINE);
+                return result;
             }
 
             if (city.equalsIgnoreCase("singapore") ||
@@ -85,6 +90,8 @@ class FetchWeather {
             b.putString("errorMessage", "Connection Timeout. Retry again later.");
             errorMessage.setData(b);
             WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
+
+            NetworkReceiver.setNetworkStatus(NetworkUtil.NETWORK_SLOW);
         } catch (Exception e) {
             errorMessage = new Message();
             b = new Bundle();
@@ -118,8 +125,7 @@ class FetchWeather {
                     data.getJSONObject("sys").getString("country");
 
             df = DateFormat.getDateTimeInstance();
-            lastUpdated = "Last Updated: " +
-                    df.format(new Date(data.getLong("dt") * 1000)) + " GMT";
+            lastUpdated = df.format(new Date(data.getLong("dt") * 1000));
             details = detailsInfo.getString("description").toUpperCase(Locale.US) +
                     "\n" + "Humidity:" + main.getString("humidity") + " %" +
                     "\n" + "Pressure:" + main.getString("pressure") + " hPa";
@@ -133,7 +139,7 @@ class FetchWeather {
             number of WeatherResults object created by 1
              */
             results = new WeatherResults(city, lastUpdated, details, temperature, weatherIcon);
-
+            results.setResulType(WeatherResults.ResultType.NORMAL);
 
         } catch (Exception e) {
             results = null;

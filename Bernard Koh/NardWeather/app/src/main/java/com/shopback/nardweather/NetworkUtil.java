@@ -10,6 +10,7 @@ import android.net.NetworkInfo;
 class NetworkUtil{
     static final int NETWORK_ERROR_ID = 1;
     static final int NETWORK_NO_ERROR_ID = 2;
+    static final int NETWORK_SLOW = 5;
     private static ConnectivityManager cm;
 
     /**

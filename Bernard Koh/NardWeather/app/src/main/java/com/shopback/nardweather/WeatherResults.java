@@ -2,8 +2,13 @@ package com.shopback.nardweather;
 
 
 class WeatherResults {
+    public enum ResultType {
+        NORMAL, OFFLINE;
+    }
 
     private final String city, lastUpdated, details, temperature, weatherIcon;
+    private ResultType type;
+
 
     WeatherResults(String city, String lastUpdated, String details, String temperature, String weatherIcon) {
         this.city = city;
@@ -29,5 +34,13 @@ class WeatherResults {
 
     String getWeatherIcon() {
         return weatherIcon;
+    }
+
+    void setResulType(ResultType type) {
+        this.type = type;
+    }
+
+    ResultType getResultType() {
+        return type;
     }
 }

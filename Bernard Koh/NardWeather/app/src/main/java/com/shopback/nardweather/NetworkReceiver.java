@@ -10,9 +10,10 @@ import android.util.Log;
 
 public class NetworkReceiver extends BroadcastReceiver {
 
-    public static int networkStatus;
+    private static int networkStatus;
     private static boolean hasInstance = false;
     private static NetworkReceiver receiver;
+
 
     private NetworkReceiver(){
         hasInstance = true;
@@ -50,6 +51,16 @@ public class NetworkReceiver extends BroadcastReceiver {
         }
         return receiver;
     }
+
+    public static int getNetworkStatus() {
+        return networkStatus;
+    }
+
+    public static void setNetworkStatus(int networkStatus) {
+        NetworkReceiver.networkStatus = networkStatus;
+    }
+
+
 }
 
 

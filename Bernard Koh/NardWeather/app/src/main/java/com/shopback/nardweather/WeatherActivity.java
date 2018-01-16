@@ -1,7 +1,7 @@
 package com.shopback.nardweather;
 
+import android.app.Activity;
 import android.app.Dialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -10,7 +10,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Message;
-import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -34,17 +33,19 @@ import android.widget.TextView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
 
 public class WeatherActivity extends AppCompatActivity {
+
     public static final int INVALID_CITY = 3;
     public static final int DUPLICATE_CITY = 4;
     public static final String CITY_PREF = "City";
+    public static final String WEATHER_PREF = "Weather";
     public static Handler postToUiHandler;
 
     static Dialog dialogDisplayed;
@@ -53,13 +54,16 @@ public class WeatherActivity extends AppCompatActivity {
     NetworkReceiver networkReceiver;
     IntentFilter filter = new IntentFilter();
     WeatherManager weatherManager;  //managed thread pool to schedule jobs
-    LinkedList<WeatherResults> weatherList;   //list of weather results
+    LinkedList<String> cityList;   //list of cities
+    HashMap<String, WeatherResults> weatherCache = new HashMap<>();   //cache of weather results
 
     WeatherAdapter weatherAdapter;
     RecyclerView weatherRecyclerView;
 
     SharedPreferences cityPref;
-    SharedPreferences.Editor prefEditor;
+    SharedPreferences weatherPref;
+    SharedPreferences.Editor cityEditor;
+    SharedPreferences.Editor weatherEditor;
     Gson gson; //used to serialize and deserialize weatherList into json string object
 
 
@@ -85,12 +89,12 @@ public class WeatherActivity extends AppCompatActivity {
         RecyclerView.ItemDecoration itemDecoration =
                 new DividerItemDecoration(this,DividerItemDecoration.VERTICAL);
         weatherRecyclerView.addItemDecoration(itemDecoration);
-        //retrieve saved weather results from SharedPreference
-        weatherList = loadPref();
         //connecting to layout manager
+        cityList = loadCityPref();
+        weatherCache = loadWeatherPref();
         weatherRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         //creating of adapter and link to recycler view
-        weatherAdapter = new WeatherAdapter(this, weatherList);
+        weatherAdapter = new WeatherAdapter(this, cityList, weatherCache);
         weatherRecyclerView.setAdapter(weatherAdapter);
         //set ItemTouchHelper to delete item on recycle view
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(createCallBack());
@@ -125,7 +129,11 @@ public class WeatherActivity extends AppCompatActivity {
 
     @Override
     public void onResume() {
-        emptyTextView.setVisibility(weatherList.isEmpty() ? View.VISIBLE : View.INVISIBLE);
+        emptyTextView.setVisibility(cityList.isEmpty() ? View.VISIBLE : View.INVISIBLE);
+        NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(this);
+        if (networkInfo != null && networkInfo.isConnectedOrConnecting()) {
+            refreshWeather();
+        }
         super.onResume();
     }
 
@@ -156,13 +164,14 @@ public class WeatherActivity extends AppCompatActivity {
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(this);
+      /*  NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(this);
         if (networkInfo != null && networkInfo.isConnected()) {
             menu.findItem(R.id.add_cities).setEnabled(true);
         } else {
             menu.findItem(R.id.add_cities).setEnabled(false);
         }
         super.onPrepareOptionsMenu(menu);
+      */
         return true;
     }
 
@@ -199,7 +208,7 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     //change city when Go Button pressed and store city in SharedPreference
                     public void onClick(DialogInterface dialog, int id) {
-                        updateWeather(new ArrayList<>(Arrays.asList(
+                        updateWeather(new LinkedList<>(Arrays.asList(
                                 inputOne.getText().toString(),
                                 inputTwo.getText().toString(),
                                 inputThree.getText().toString()))
@@ -215,14 +224,47 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     /**
-     * Fetches the weather info of the three input cities
+     * Fetches the weather info of the input cities
      *
      * @param inputList: List retrieved from UI input
      */
-    private void updateWeather(ArrayList<String> inputList) {
+    private void updateWeather(LinkedList<String> inputList) {
         for (String city: inputList) {
             weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city));
         }
+    }
+
+    /**
+     * Refreshes weather information and updates cache. Updates those cities that previously could not
+     * retrieve weather information too
+     */
+    private void refreshWeather() {
+        //finds cities with invalid weather information
+        ListIterator<String> iterator = cityList.listIterator();
+        LinkedList<String> refreshList = new LinkedList<>();
+        while (iterator.hasNext()) {
+            String city = iterator.next();
+            WeatherResults results = weatherCache.get(city);
+            if (results.getResultType() == WeatherResults.ResultType.OFFLINE) {
+                refreshList.add(city);
+            }
+        }
+        //TODO:: check difference bewteen last updated time and current time. update those that havent been updated for too long
+        iterator = refreshList.listIterator();
+        while (iterator.hasNext()) {
+            weatherCache.remove(cityList.remove(iterator.next()));
+        }
+        Log.d("Refresh Weather", "refreshing list");
+        updateWeather(refreshList);
+
+    }
+
+    private void refreshOfflineWeather() {
+
+    }
+
+    private void refreshOutdatedWeather() {
+
     }
 
     /**
@@ -238,13 +280,26 @@ public class WeatherActivity extends AppCompatActivity {
             public void run() {
                 WeatherResults data = FetchWeather.getWeather(WeatherActivity.this, city);
                 if (data != null && !isDuplicating(data.getCity())) {
-                    weatherList.add(data);
+                    String newCity = data.getCity();
+                    cityList.add(newCity);
+                    weatherCache.put(newCity,data);
                     saveList();
-                    Log.d("debug1", "adding " + weatherList.getLast().getCity() +" to list");
                     postToUiHandler.post(getUiRunnable());
+                    Log.d("Fetch Weather", "adding " + newCity);
+                } else if (data == null &&
+                        !city.isEmpty() &&
+                        !isDuplicating(city)) {
+                    //save the user input for future fetch
+                    data = new WeatherResults(city.toUpperCase(), "","","","");
+                    data.setResulType(WeatherResults.ResultType.OFFLINE);
+                    cityList.add(city);
+                    weatherCache.put(city, data);
+                    saveList();
+                    Log.d("Network", "no data fetched for " + city);
                 } else {
-                    Log.d("Network", "no data fetched for" + city);
+                    Log.d("Network", "data is duplicated");
                 }
+                postToUiHandler.post(getUiRunnable());
             }
         };
     }
@@ -261,28 +316,11 @@ public class WeatherActivity extends AppCompatActivity {
                 Log.d("Network", "updating UI");
                 weatherAdapter.notifyDataSetChanged();
                 weatherRecyclerView.scrollToPosition(weatherAdapter.getItemCount()-1);
-                if (!weatherList.isEmpty()) {
+                if (!cityList.isEmpty()) {
                     emptyTextView.setVisibility(View.INVISIBLE);
                 }
             }
         };
-    }
-
-
-    /**
-     * retrieves the list of saved weather information from SharedPreference
-     * @return stored LinkedList<WeatherResult> else returns a new empty LinkedList<WeatherResult>
-     */
-    private LinkedList<WeatherResults> loadPref() {
-        //retrieve stored cities
-        cityPref = PreferenceManager.getDefaultSharedPreferences(this);
-        prefEditor = cityPref.edit();
-        String json = cityPref.getString(CITY_PREF,null);
-        if (json != null) {
-            emptyTextView.setVisibility(View.VISIBLE);
-            return gson.fromJson(json, new TypeToken<LinkedList<WeatherResults>>(){}.getType());
-        }
-        return new LinkedList<>();
     }
 
     /**
@@ -294,20 +332,21 @@ public class WeatherActivity extends AppCompatActivity {
         Message message;
         Bundle b;
 
-        ListIterator<WeatherResults> iterator = weatherList.listIterator();
-        WeatherResults next;
+        ListIterator<String> iterator = cityList.listIterator();
+        String next;
         while (iterator.hasNext()) {
             next = iterator.next();
-            if (next.getCity().equals(city)) {
+            if (next.equals(city)) {
                 message = new Message();
                 b = new Bundle();
                 message.what = WeatherActivity.DUPLICATE_CITY;
-                b.putString("errorMessage", next.getCity()  + " already exists!");
+                b.putString("errorMessage", next + " already exists!");
                 message.setData(b);
                 WeatherManager.getInstance().getMainThreadHandler().sendMessage(message);
                 return true;
             }
         }
+        Log.d("Fetch Weather", "Check duplicates for " + city);
         return false;
     }
 
@@ -315,10 +354,48 @@ public class WeatherActivity extends AppCompatActivity {
     /**
      * Saves the current weather list to SharedPreference
      */
-    private synchronized  void saveList() {
-        String json = gson.toJson(weatherList);
-        prefEditor.putString(CITY_PREF, json);
-        prefEditor.apply();
+    private synchronized void saveList() {
+        String jsonCity = gson.toJson(cityList);
+        String jsonWeather = gson.toJson(weatherCache);
+
+        cityEditor.putString(CITY_PREF, jsonCity);
+        weatherEditor.putString(WEATHER_PREF, jsonWeather);
+
+        cityEditor.apply();
+        weatherEditor.apply();
+    }
+
+    /**
+     * retrieves the list of saved cities from SharedPreference
+     * @return stored LinkedList<String> else returns a new empty LinkedList<String>
+     */
+    private LinkedList<String> loadCityPref() {
+        //retrieve stored cities
+        cityPref = getSharedPreferences(CITY_PREF, MODE_PRIVATE);
+        cityEditor = cityPref.edit();
+        String jsonCity = cityPref.getString(CITY_PREF,null);
+
+        if (jsonCity != null) {
+            emptyTextView.setVisibility(View.VISIBLE);
+            return gson.fromJson(jsonCity, new TypeToken<LinkedList<String>>(){}.getType());
+        }
+
+        return new LinkedList<>();
+    }
+
+    /**
+     * retrieves the list of saved weather information from SharedPreference
+     * @return stored HashMap<String, WeatherResult>
+     */
+    private HashMap<String, WeatherResults> loadWeatherPref() {
+        weatherPref = getSharedPreferences(CITY_PREF, MODE_PRIVATE);
+        weatherEditor = weatherPref.edit();
+        String jsonWeather = weatherPref.getString(WEATHER_PREF, null);
+
+        if (jsonWeather != null) {
+            return gson.fromJson(jsonWeather, new TypeToken<HashMap<String, WeatherResults>>(){}.getType());
+        }
+        return new HashMap<>();
     }
 
     /**
@@ -341,7 +418,7 @@ public class WeatherActivity extends AppCompatActivity {
                 int toPos = target.getAdapterPosition();
                 weatherAdapter.onItemMove(fromPos,toPos);
                 weatherAdapter.notifyItemMoved(fromPos,toPos);
-                Collections.swap(weatherList, fromPos, toPos);
+                Collections.swap(cityList, fromPos, toPos);
                 saveList();
                 return true;
             }
@@ -360,11 +437,11 @@ public class WeatherActivity extends AppCompatActivity {
                         .setPositiveButton(R.string.dialog_confirm, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int id) {
-                                weatherList.remove(position);
+                                weatherCache.remove(cityList.remove(position));
                                 weatherAdapter.notifyItemRemoved(position);
                                 saveList();
 
-                                if (weatherList.isEmpty()) {
+                                if (cityList.isEmpty()) {
                                     Log.d("debug2", "setting empty visibility");
                                     emptyTextView.setVisibility(View.VISIBLE);
                                 }
@@ -395,14 +472,24 @@ public class WeatherActivity extends AppCompatActivity {
     /**
      * Displays a dialog when there is no internet connection
      *
-     * @param context: Context
+     * @param activity: WeatherActivity
      */
-    public static void showOfflineDialog(Context context) {
-        final Dialog dialog = new Dialog(context);
+    public static void showOfflineDialog(final Activity activity) {
+        if (activity.isFinishing()) {
+            return;
+        }
+        final Dialog dialog = new Dialog(activity);
         dialog.requestWindowFeature(Window.FEATURE_LEFT_ICON);
         dialog.setContentView(R.layout.offline_dialog);
         dialog.setCanceledOnTouchOutside(false);
         dialog.setCancelable(true);
+
+        dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialogInterface) {
+                activity.finish();
+            }
+        });
 
         Window window = dialog.getWindow();
         window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
@@ -425,8 +512,9 @@ public class WeatherActivity extends AppCompatActivity {
     public static void dismissDialog() {
         if (dialogDisplayed != null) {
             dialogDisplayed.dismiss();
+            dialogDisplayed = null;
+            Log.d("Dialog", "dialog is null");
         }
-        dialogDisplayed = null;
     }
 
     private static void setDialog(Dialog dialog){
@@ -442,7 +530,6 @@ public class WeatherActivity extends AppCompatActivity {
 
 //TODO: Refresh feature
 //TODO: clear all
-//TODO: timezone
 //TODO: error message util class
 //TODO: scroll to duplicated weather in recycler view
-//TODO: why broadcast receiver fails when phone goes to sleep?
+//TODO: refreshWeather fails when previously there is no internet. there is lag between the firing of the connectivity_change intent by the system.
