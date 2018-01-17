@@ -546,4 +546,5 @@ public class WeatherActivity extends AppCompatActivity {
 
 
 //TODO: clear all
+//TODO: when refresh old weather information, don't remove. just update the hashmap
 
