@@ -20,6 +20,7 @@ import android.support.v7.widget.helper.ItemTouchHelper;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -46,8 +47,6 @@ import java.util.ListIterator;
 
 public class WeatherActivity extends AppCompatActivity {
 
-    public static final int INVALID_CITY = 3;
-    public static final int DUPLICATE_CITY = 4;
     public static final String CITY_PREF = "City";
     public static final String WEATHER_PREF = "Weather";
     public static Handler postToUiHandler;
@@ -69,7 +68,7 @@ public class WeatherActivity extends AppCompatActivity {
     SharedPreferences weatherPref;
     SharedPreferences.Editor cityEditor;
     SharedPreferences.Editor weatherEditor;
-    Gson gson; //used to serialize and deserialize weatherList into json string object
+    Gson gson = new Gson(); //used to serialize and deserialize weatherList into json string object
 
     SwipeRefreshLayout swipeContainer;
 
@@ -77,9 +76,7 @@ public class WeatherActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_weather_recycler);
-
-        emptyTextView = findViewById(R.id.weather_list_empty);
+        loadUi();
 
         if (!WeatherManager.hasInstance) {
             weatherManager = WeatherManager.getInstance(WeatherActivity.this);
@@ -88,36 +85,6 @@ public class WeatherActivity extends AppCompatActivity {
         }
         postToUiHandler = WeatherManager.getInstance().getMainThreadHandler();
         networkReceiver = NetworkReceiver.getInstance();
-        gson = new Gson();
-
-        //setting up recycler view
-        weatherRecyclerView = findViewById(R.id.weather_recycler_view);
-        weatherRecyclerView.setHasFixedSize(true);
-        RecyclerView.ItemDecoration itemDecoration =
-                new DividerItemDecoration(this,DividerItemDecoration.VERTICAL);
-        weatherRecyclerView.addItemDecoration(itemDecoration);
-        //connecting to layout manager
-        cityList = loadCityPref();
-        weatherCache = loadWeatherPref();
-        weatherRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        //creating of adapter and link to recycler view
-        weatherAdapter = new WeatherAdapter(this, cityList, weatherCache);
-        weatherRecyclerView.setAdapter(weatherAdapter);
-        //set ItemTouchHelper to delete item on recycle view
-        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(createCallBack());
-        itemTouchHelper.attachToRecyclerView(weatherRecyclerView);
-
-        swipeContainer = findViewById(R.id.swipeContainer);
-        swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                refreshWeather();
-                weatherAdapter.notifyDataSetChanged();
-                swipeContainer.setRefreshing(false);
-            }
-        });
-
-        swipeContainer.setColorSchemeResources(android.R.color.holo_red_dark);
     }
 
     /**
@@ -149,7 +116,7 @@ public class WeatherActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         emptyTextView.setVisibility(cityList.isEmpty() ? View.VISIBLE : View.INVISIBLE);
-        NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(this);
+        NetworkInfo networkInfo = Util.getActiveNetworkInfo(this);
         if (networkInfo != null && networkInfo.isConnectedOrConnecting()) {
             refreshWeather();
         }
@@ -184,7 +151,7 @@ public class WeatherActivity extends AppCompatActivity {
     //disable the add cities button if there is no internet connection. commented out for now
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        NetworkInfo networkInfo = NetworkUtil.getActiveNetworkInfo(this);
+        NetworkInfo networkInfo = Util.getActiveNetworkInfo(this);
         if (networkInfo != null && networkInfo.isConnected()) {
            // menu.findItem(R.id.add_cities).setEnabled(true);
             //TODO:: find a better place to put this
@@ -204,30 +171,16 @@ public class WeatherActivity extends AppCompatActivity {
      */
     private void showInputDialog() {
 
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View inputDialog = inflater.inflate(R.layout.add_cities_input_dialog, null);
         //TODO: convert to layout xml format
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
 
-        final EditText inputOne = new EditText(this);
-        inputOne.setInputType(InputType.TYPE_CLASS_TEXT);
-        inputOne.setHint(R.string.city_name_example);
-        inputOne.setHintTextColor(Color.GRAY);
-        layout.addView(inputOne);
-
-        final EditText inputTwo = new EditText(this);
-        inputTwo.setInputType(InputType.TYPE_CLASS_TEXT);
-        inputTwo.setHint(R.string.city_name_example_two);
-        inputTwo.setHintTextColor(Color.GRAY);
-        layout.addView(inputTwo);
-
-        final EditText inputThree = new EditText(this);
-        inputThree.setInputType(InputType.TYPE_CLASS_TEXT);
-        inputThree.setHint(R.string.city_name_example_three);
-        inputThree.setHintTextColor(Color.GRAY);
-        layout.addView(inputThree);
+        final EditText inputOne = inputDialog.findViewById(R.id.inputOne);
+        final EditText inputTwo = inputDialog.findViewById(R.id.inputTwo);
+        final EditText inputThree = inputDialog.findViewById(R.id.inputThree);
 
         new AlertDialog.Builder(this).setTitle("Search by City")
-                .setMessage("Please enter cities:").setView(layout)
+                .setMessage("Please enter cities:").setView(inputDialog)
                 .setPositiveButton(R.string.dialog_go, new DialogInterface.OnClickListener() {
                     @Override
                     //change city when Go Button pressed and store city in SharedPreference
@@ -244,7 +197,7 @@ public class WeatherActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialogInterface, int id) {
                         //do nothing
                     }
-                }).show();
+                }).create().show();
     }
 
     /**
@@ -253,6 +206,9 @@ public class WeatherActivity extends AppCompatActivity {
      * @param inputList: List retrieved from UI input
      */
     private void updateWeather(LinkedList<String> inputList) {
+        if (inputList.isEmpty()) {
+            return;
+        }
         for (String city: inputList) {
             weatherManager.getFetchWeatherJobs().execute(getFetchWeatherRunnable(city));
         }
@@ -263,14 +219,15 @@ public class WeatherActivity extends AppCompatActivity {
      * retrieve weather information too
      */
     public void refreshWeather() {
+        String city;
         //finds cities with invalid weather information
         ListIterator<String> iterator = cityList.listIterator();
         LinkedList<String> refreshList = chooseCitiesToRefresh(iterator);
 
-        //TODO:: check difference bewteen last updated time and current time. update those that havent been updated for too long
         iterator = refreshList.listIterator();
         while (iterator.hasNext()) {
-            weatherCache.remove(cityList.remove(iterator.next()));
+            city = iterator.next();
+            weatherCache.remove(cityList.remove(city));
         }
         updateWeather(refreshList);
     }
@@ -289,9 +246,8 @@ public class WeatherActivity extends AppCompatActivity {
                 DateFormat formatter = new SimpleDateFormat("MMM dd, yyyy HH:mm:ss aaa");
                 try {
                     prevTime = formatter .parse(results.getLastUpdated()).getTime();
-                    Log.d("Time prev", ((Long)prevTime).toString());
                     diff = currTime - prevTime;
-                    minutes = diff/(60*1000) % 60;
+                    minutes = diff/(60*1000);
                     if (minutes >= 60) {
                         list.add(city);
                         Log.d("Refreshing", city);
@@ -331,7 +287,6 @@ public class WeatherActivity extends AppCompatActivity {
                     data.setResulType(WeatherResults.ResultType.OFFLINE);
                     cityList.add(city);
                     weatherCache.put(city, data);
-                    saveList();
                     Log.d("Network", "no data fetched for " + city);
                 } else {
                     Log.d("Network", "data is duplicated");
@@ -350,7 +305,6 @@ public class WeatherActivity extends AppCompatActivity {
     private Runnable getUiRunnable() {
         return new Runnable() {
             public void run() {
-                Log.d("Network", "updating UI");
                 weatherAdapter.notifyDataSetChanged();
                 weatherRecyclerView.scrollToPosition(weatherAdapter.getItemCount()-1);
                 if (!cityList.isEmpty()) {
@@ -365,25 +319,18 @@ public class WeatherActivity extends AppCompatActivity {
      * @param city: String
      * @return true if there is a duplicate else return false
      */
-    private boolean isDuplicating(String city) {
-        Message message;
-        Bundle b;
-
+    private synchronized  boolean isDuplicating(String city) {
         ListIterator<String> iterator = cityList.listIterator();
         String next;
         while (iterator.hasNext()) {
             next = iterator.next();
             if (next.equals(city)) {
-                message = new Message();
-                b = new Bundle();
-                message.what = WeatherActivity.DUPLICATE_CITY;
-                b.putString("errorMessage", next + " already exists!");
-                message.setData(b);
+                Message message = Util.generateMessage(Util.ERROR_MESSAGE_KEY, Util.DUPLICATE_CITY,
+                        city + Util.DUPLICATE_CITY_MESSAGE);
                 WeatherManager.getInstance().getMainThreadHandler().sendMessage(message);
                 return true;
             }
         }
-        Log.d("Fetch Weather", "Check duplicates for " + city);
         return false;
     }
 
@@ -392,7 +339,9 @@ public class WeatherActivity extends AppCompatActivity {
      * Saves the current weather list to SharedPreference
      */
     private synchronized void saveList() {
+        Log.d("saveList", "accessing city list");
         String jsonCity = gson.toJson(cityList);
+        Log.d("saveList", "finished city list");
         String jsonWeather = gson.toJson(weatherCache);
 
         cityEditor.putString(CITY_PREF, jsonCity);
@@ -553,10 +502,48 @@ public class WeatherActivity extends AppCompatActivity {
             Log.d("Dialog", "dialog is null");
         }
     }
+
+    /**
+     * Initialize the UI components of the main activity
+     */
+    private void loadUi() {
+        setContentView(R.layout.activity_weather_recycler);
+        emptyTextView = findViewById(R.id.weather_list_empty);
+
+
+        //setting up recycler view
+        weatherRecyclerView = findViewById(R.id.weather_recycler_view);
+        weatherRecyclerView.setHasFixedSize(true);
+        RecyclerView.ItemDecoration itemDecoration =
+                new DividerItemDecoration(this,DividerItemDecoration.VERTICAL);
+        weatherRecyclerView.addItemDecoration(itemDecoration);
+        //connecting to layout manager
+        cityList = loadCityPref();
+        weatherCache = loadWeatherPref();
+        weatherRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        //creating of adapter and link to recycler view
+        weatherAdapter = new WeatherAdapter(this, cityList, weatherCache);
+        weatherRecyclerView.setAdapter(weatherAdapter);
+
+
+        //set ItemTouchHelper to delete item on recycle view
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(createCallBack());
+        itemTouchHelper.attachToRecyclerView(weatherRecyclerView);
+
+        swipeContainer = findViewById(R.id.swipeContainer);
+        swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                refreshWeather();
+                weatherAdapter.notifyDataSetChanged();
+                swipeContainer.setRefreshing(false);
+            }
+        });
+
+        swipeContainer.setColorSchemeResources(android.R.color.holo_red_dark);
+    }
 }
 
 
 //TODO: clear all
-//TODO: error message util class
-//question:refreshWeather fails when previously there is no internet. there is lag between the firing of the connectivity_change intent by the system.
 

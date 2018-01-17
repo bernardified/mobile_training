@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 class WeatherManager {
 
     private final ThreadPoolExecutor fetchWeatherJobs;
-    private final ThreadPoolExecutor refreshWeatherJobs;
     private static final int KEEP_ALIVE_TIME = 1;
     private static final TimeUnit KEEP_ALIVE_TIME_UNIT = TimeUnit.SECONDS;
     private static int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
@@ -37,31 +36,27 @@ class WeatherManager {
 
         //initialize thread pool to run multiple fetch weather jobs
         BlockingQueue<Runnable> fetchWeatherQueue = new LinkedBlockingQueue<Runnable>();
-        BlockingQueue<Runnable> refreshWeatherQueue = new LinkedBlockingQueue<>();
         fetchWeatherJobs = new ThreadPoolExecutor(NUMBER_OF_CORES, NUMBER_OF_CORES,
                 KEEP_ALIVE_TIME, KEEP_ALIVE_TIME_UNIT, fetchWeatherQueue);
-        refreshWeatherJobs = new ThreadPoolExecutor(NUMBER_OF_CORES, NUMBER_OF_CORES,
-                KEEP_ALIVE_TIME, KEEP_ALIVE_TIME_UNIT, refreshWeatherQueue);
 
         mainThreadHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message inputMessage) {
                 Bundle b = inputMessage.getData();
-                errorMessage = b.getString("errorMessage");
-                if(inputMessage.what == NetworkUtil.NETWORK_ERROR_ID) {
+                errorMessage = b.getString(Util.ERROR_MESSAGE_KEY);
+
+                if(inputMessage.what == Util.NETWORK_ERROR_ID) {
                     WeatherActivity.showOfflineDialog(activity);
-                } else if (inputMessage.what == NetworkUtil.NETWORK_NO_ERROR_ID) {
-                    Log.d("main thread", "received good network message");
+                } else if (inputMessage.what == Util.NETWORK_NO_ERROR_ID) {
                     WeatherActivity.dismissDialog();
                 } else {
                     Toast.makeText(activity, errorMessage, Toast.LENGTH_SHORT).show();
                 }
 
-                if (inputMessage.what == NetworkUtil.NETWORK_ERROR_ID ||
-                        inputMessage.what == NetworkUtil.NETWORK_NO_ERROR_ID) {
+                if (inputMessage.what == Util.NETWORK_ERROR_ID ||
+                        inputMessage.what == Util.NETWORK_NO_ERROR_ID) {
                     activity.invalidateOptionsMenu();
                 }
-
             }
         };
     }
@@ -87,8 +82,6 @@ class WeatherManager {
     ThreadPoolExecutor getFetchWeatherJobs() {
         return fetchWeatherJobs;
     }
-
-    ThreadPoolExecutor getRefreshWeatherJobs() {return refreshWeatherJobs; }
 
     Handler getMainThreadHandler() {
         return mainThreadHandler;

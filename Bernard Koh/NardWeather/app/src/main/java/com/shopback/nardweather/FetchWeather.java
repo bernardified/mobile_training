@@ -17,8 +17,8 @@ import java.util.Date;
 import java.util.Locale;
 
 class FetchWeather {
-
-    static final String DEFAULT_SINGAPORE = "Singapore, SG";
+    private static final String DEFAULT_SINGAPORE = "Singapore, SG";
+    private static final String OPEN_WEATHER_MAP_API_CALL = "http://api.openweathermap.org/data/2.5/weather?q=%s&units=metric&appid=%s";
 
     /**
      * Retrieves city's weather information from openweathermap.org. The JSONObject is null if the
@@ -30,18 +30,13 @@ class FetchWeather {
      */
     static WeatherResults getWeather(Context context, String city){
         HttpURLConnection connection;
-        Message errorMessage;
-        Bundle b;
-
-        String OPEN_WEATHER_MAP_API_CALL =
-                "http://api.openweathermap.org/data/2.5/weather?q=%s&units=metric&appid=%s";
         try {
             //ignore empty input
             if(city.equals("")) {
                 return null;
             }
 
-            if (NetworkReceiver.getInstance().getNetworkStatus() == NetworkUtil.NETWORK_ERROR_ID) {
+            if (NetworkReceiver.getInstance().getNetworkStatus() == Util.NETWORK_ERROR_ID) {
                 Log.d("getWeather", "no network");
                 WeatherResults result = new WeatherResults(city, "","","","");
                 result.setResulType(WeatherResults.ResultType.OFFLINE);
@@ -84,21 +79,13 @@ class FetchWeather {
             return parseResult(data);
 
         }catch (SocketTimeoutException e) {
-            errorMessage = new Message();
-            b = new Bundle();
-            Log.d("Get-Response", "Connection has timed-out.");
-            b.putString("errorMessage", "Connection Timeout. Retry again later.");
-            errorMessage.setData(b);
+            Message errorMessage = Util.generateMessage(Util.ERROR_MESSAGE_KEY, Util.NETWORK_TIMEOUT,
+                    Util.CONNECTION_TIMEOUT_MESSAGE);
             WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
-
-            NetworkReceiver.setNetworkStatus(NetworkUtil.NETWORK_SLOW);
+            NetworkReceiver.setNetworkStatus(Util.NETWORK_SLOW);
         } catch (Exception e) {
-            errorMessage = new Message();
-            b = new Bundle();
-            Log.d("Get-Response", "City not found");
-            errorMessage.what = WeatherActivity.INVALID_CITY;
-            b.putString("errorMessage", city + "'s information cannot be found");
-            errorMessage.setData(b);
+            Message errorMessage = Util.generateMessage(Util.ERROR_MESSAGE_KEY, Util.INVALID_CITY,
+                    city + Util.INVALID_CITY_MESSAGE);
             WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
         }
         return null;

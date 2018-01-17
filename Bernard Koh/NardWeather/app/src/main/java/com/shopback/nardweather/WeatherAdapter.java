@@ -134,5 +134,13 @@ public class WeatherAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     void onClearViewItem(RecyclerView.ViewHolder viewHolder) {
         viewHolder.itemView.setBackgroundColor(Color.WHITE);
+        switch (viewHolder.getItemViewType()) {
+            case NORMAL:
+                viewHolder.itemView.setBackgroundColor(Color.WHITE);
+                break;
+            case OFFLINE:
+                viewHolder.itemView.setBackgroundColor(Color.parseColor("#DCDCDC"));
+                break;
+        }
     }
 }

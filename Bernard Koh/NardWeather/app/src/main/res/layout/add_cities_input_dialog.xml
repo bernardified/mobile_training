@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+
+    <EditText
+        android:id="@+id/inputOne"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:hint="@string/city_name_example"
+        android:textColorHint="@android:color/darker_gray"/>
+
+    <EditText
+        android:id="@+id/inputTwo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:hint="@string/city_name_example_two"
+        android:textColorHint="@android:color/darker_gray"/>
+
+    <EditText
+        android:id="@+id/inputThree"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:hint="@string/city_name_example_three"
+        android:textColorHint="@android:color/darker_gray"/>
+</LinearLayout>
