@@ -21,7 +21,8 @@
             android:layout_centerInParent="true"
             android:gravity="center"
             android:textSize="25sp"
-            tools:text="John Tan" />
+            tools:text="John Tan"
+            android:textAppearance="@style/Base.TextAppearance.AppCompat.Headline"/>
 
         <TextView
             android:id="@+id/contact_number"
@@ -30,7 +31,8 @@
             android:layout_below="@id/name"
             android:gravity="center"
             android:textSize="22sp"
-            tools:text="98765432" />
+            tools:text="98765432"
+            android:textAppearance="@style/Base.TextAppearance.AppCompat.Large"/>
 
         <TextView
             android:id="@+id/number_indicator"
@@ -40,7 +42,8 @@
             android:layout_centerHorizontal="true"
             android:layout_marginTop="27dp"
             tools:text="5"
-            android:textSize="30sp"/>
+            android:textSize="30sp"
+            android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
     </RelativeLayout>
 
     <LinearLayout

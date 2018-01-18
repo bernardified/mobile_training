@@ -1,6 +1,7 @@
 package com.shopback.speeddial;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -16,12 +17,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private TextView nameView, numberView, indicatorView;
@@ -31,23 +32,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private static final int CHOOSE_CONTACT_CODE = 1234;
     private static final String SPEED_DIAL_PREF = "Speed Dial";
-    final String permissionToCall = Manifest.permission.CALL_PHONE;
+    final static String permissionToCall = Manifest.permission.CALL_PHONE;
 
     private SharedPreferences speedDialPref;
     public static ArrayList<Contact> savedContacts;
     private SharedPreferences.Editor dataEditor;
     private Gson gson;
 
+    public static MainActivity mainActivity;
+
+    static MainActivity getMainActivity() {
+        return mainActivity;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initializeUi();
         loadSavedData();
-
-        if (ActivityCompat.checkSelfPermission(this, permissionToCall) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{permissionToCall}, 1);
-        }
+        mainActivity = this;
     }
 
     @Override
@@ -96,8 +99,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            cursor.close();
         }
-        cursor.close();
     }
 
     @Override
@@ -193,6 +197,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         nameView.setText(R.string.no_contact_set);
         numberView.setText("");
         saveData();
+    }
+
+    public void makePhoneCall(Context context, String input) {
+        String numberToCall = null;
+        try {
+
+            if (ActivityCompat.checkSelfPermission(context, MainActivity.permissionToCall) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{MainActivity.permissionToCall}, 1);
+
+            } else {
+                Integer dialPressed = Integer.parseInt(input);
+                if (dialPressed >= 2 && dialPressed <= 9) {
+                    numberToCall = MainActivity.savedContacts.get(dialPressed).getNumber();
+                    Log.d("call receiver", "numberToCall = " + numberToCall);
+
+                    //no contact registered for the number
+                    if (numberToCall == null) {
+                        Toast.makeText(context, "No speed dial set", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        } catch (NumberFormatException nfe) {
+            numberToCall = input;
+            Log.d("call receiver", input + " is not integer");
+        } finally {
+
+            if (numberToCall != null) {
+                Intent makePhoneCallIntent = new Intent(Intent.ACTION_CALL);
+                makePhoneCallIntent.setData(Uri.parse("tel:" + numberToCall));
+                context.startActivity(makePhoneCallIntent);
+            } else {
+                Intent makePhoneCallIntent = new Intent(Intent.ACTION_DIAL);
+                makePhoneCallIntent.setData(Uri.parse("tel:" + input));
+                context.startActivity(makePhoneCallIntent);
+            }
+        }
     }
 }
 
