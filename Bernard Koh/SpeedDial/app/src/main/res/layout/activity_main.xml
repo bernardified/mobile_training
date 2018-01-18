@@ -31,6 +31,16 @@
             android:gravity="center"
             android:textSize="22sp"
             tools:text="98765432" />
+
+        <TextView
+            android:id="@+id/number_indicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="27dp"
+            tools:text="5"
+            android:textSize="30sp"/>
     </RelativeLayout>
 
     <LinearLayout

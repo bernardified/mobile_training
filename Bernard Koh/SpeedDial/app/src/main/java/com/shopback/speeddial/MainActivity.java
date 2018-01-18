@@ -1,10 +1,13 @@
 package com.shopback.speeddial;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,13 +24,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    private TextView nameView, numberView;
+    private TextView nameView, numberView, indicatorView;
     private Button assignButton;
 
     private static int lastPressedNumber;
 
     private static final int CHOOSE_CONTACT_CODE = 1234;
     private static final String SPEED_DIAL_PREF = "Speed Dial";
+    final String permissionToCall = Manifest.permission.CALL_PHONE;
 
     private SharedPreferences speedDialPref;
     public static ArrayList<Contact> savedContacts;
@@ -40,10 +44,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         initializeUi();
         loadSavedData();
+
+        if (ActivityCompat.checkSelfPermission(this, permissionToCall) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{permissionToCall}, 1);
+        }
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu){
+    public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.contact_options_menu, menu);
         return true;
     }
@@ -75,15 +83,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Contact contact;
         Uri contactDetails = data.getData();
         Cursor cursor = getContentResolver().query(contactDetails, null, null, null, null);
-        if (cursor.moveToFirst()) {
-            int nameColumn = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-            int numberColumn = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-            contact = new Contact(cursor.getString(nameColumn), cursor.getString(numberColumn));
-            nameView.setText(contact.getName());
-            numberView.setText(contact.getNumber());
-            savedContacts.set(buttonPresed, contact);
-            saveData();
+
+        try {
+            if (cursor.moveToFirst()) {
+                int nameColumn = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+                int numberColumn = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                contact = new Contact(cursor.getString(nameColumn), cursor.getString(numberColumn));
+                nameView.setText(contact.getName());
+                numberView.setText(contact.getNumber());
+                savedContacts.set(buttonPresed, contact);
+                saveData();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        cursor.close();
     }
 
     @Override
@@ -104,6 +118,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         nameView = findViewById(R.id.name);
         numberView = findViewById(R.id.contact_number);
+        indicatorView = findViewById(R.id.number_indicator);
+
         num2 = findViewById(R.id.button_num_2);
         num2.setOnClickListener(this);
         num3 = findViewById(R.id.button_num_3);
@@ -138,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }.getType());
                 } else {
                     savedContacts = new ArrayList<>(10);
-                    for(int i=0; i<10; i++) {
+                    for (int i = 0; i < 10; i++) {
                         savedContacts.add(new Contact());
                     }
                     Log.d("Initialization", "Empty data loaded");
@@ -169,6 +185,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             nameView.setText(R.string.no_contact_set);
             numberView.setText("");
         }
+        indicatorView.setText(number);
     }
 
     private void clearContact() {
