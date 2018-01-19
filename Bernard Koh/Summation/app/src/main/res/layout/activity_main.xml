@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.shopback.summation.MainActivity">
+
+    <TextView
+        android:id="@+id/sum_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="100sp"
+        android:gravity="center"
+        android:layout_centerInParent="true"
+        tools:text="123456789" />
+
+    <Button
+        android:id="@+id/sum_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:onClick="calculateSum"
+        android:text="Sum it" />
+
+    <EditText
+        android:id="@+id/user_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/sum_button"
+        android:gravity="center"
+        android:hint="Enter number of integers"
+        android:inputType="numberSigned" />
+
+    <TextView
+        android:id="@+id/time_taken_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/sum_view"
+        android:layout_centerHorizontal="true"
+        android:textSize="15sp"
+        tools:text="Time Taken: 2000ms"/>
+
+
+</RelativeLayout>
