@@ -37,6 +37,7 @@
         android:layout_height="wrap_content"
         android:layout_alignBottom="@+id/sum_view"
         android:layout_centerHorizontal="true"
+        android:textSize="15sp"
         tools:text="Time Taken: 2000ms"/>
 
 

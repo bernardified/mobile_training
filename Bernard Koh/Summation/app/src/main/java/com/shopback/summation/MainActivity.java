@@ -1,5 +1,7 @@
 package com.shopback.summation;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,7 +20,8 @@ public class MainActivity extends AppCompatActivity {
     EditText userInputField;
     static long timeTaken, start, end;
     static long total;
-    final static int ARRAY_LENGTH  = 10000000;
+    final static int ARRAY_LENGTH = 10000000;
+    static Handler mainHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
         timeTakenView = findViewById(R.id.time_taken_view);
         sumButton = findViewById(R.id.sum_button);
         userInputField = findViewById(R.id.user_input);
+
+        mainHandler = new Handler();
     }
 
     @Override
@@ -47,25 +52,22 @@ public class MainActivity extends AppCompatActivity {
     public void calculateSum(View view) {
         total = 0;
         doConcurrentSummation(Long.parseLong(userInputField.getText().toString()));
-        end = System.currentTimeMillis();
-        sumView.setText(((Long)total).toString());
-        timeTaken = end-start;
-        timeTakenView.setText(((Long)timeTaken).toString());
     }
 
     private void doConcurrentSummation(long size) {
         start = System.currentTimeMillis();
 
-        int numArrays = (int)Math.floor(size/ARRAY_LENGTH);
-        final int remainingSize = (int)size - (ARRAY_LENGTH*numArrays);
+        int numArrays = (int) Math.floor(size / ARRAY_LENGTH);
+        final int remainingSize = (int) size - (ARRAY_LENGTH * numArrays);
 
-        for(long i=0; i<numArrays; i++) {
+        for (long i = 0; i < numArrays; i++) {
             CalculationThreadPool.post(new Runnable() {
                 @Override
                 public void run() {
                     int[] data = populateArray(ARRAY_LENGTH);
                     long threadSum = doThreadSum(data);
                     addToOverallSum(threadSum);
+                    mainHandler.post(updateUI());
                 }
             });
         }
@@ -77,32 +79,46 @@ public class MainActivity extends AppCompatActivity {
                     int[] data = populateArray(remainingSize);
                     long threadSum = doThreadSum(data);
                     addToOverallSum(threadSum);
+                    mainHandler.post(updateUI());
                 }
             });
         }
     }
 
+    private Runnable updateUI() {
+        return new  Runnable() {
+            public void run() {
+                end = System.currentTimeMillis();
+                timeTaken = end - start;
+
+                sumView.setText(((Long) total).toString());
+                timeTakenView.setText("Time taken: "+((Long) timeTaken).toString()+ "ms");
+            }
+        };
+    }
+
+
     private long doThreadSum(int[] data) {
         long sum = 0;
-        for(int i = 0; i <data.length; i++) {
+        for (int i = 0; i < data.length; i++) {
             sum += data[i];
         }
-        Log.d("doing thread sum", "thread sum: " + ((Long)sum).toString());
+        Log.d("doing thread sum", "thread sum: " + ((Long) sum).toString());
         return sum;
     }
 
     private int[] populateArray(int size) {
         int[] array = new int[size];
         Random rgn = new Random();
-        for (int i=0; i<array.length; i++) {
+        for (int i = 0; i < array.length; i++) {
             array[i] = rgn.nextInt(100) + 1;
         }
         return array;
     }
 
-    private static void addToOverallSum(long partialSum) {
+    private void addToOverallSum(long partialSum) {
         total += partialSum;
-        Log.d("Total Sum", ((Long)total).toString());
+        Log.d("Total Sum", ((Long) total).toString());
     }
 
 
