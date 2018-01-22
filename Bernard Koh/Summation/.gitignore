@@ -1,3 +1,4 @@
+/.idea
 *.iml
 .gradle
 /local.properties
@@ -6,4 +7,16 @@
 .DS_Store
 /build
 /captures
-.externalNativeBuild
+/reports
+
+# fastlane specific
+fastlane/report.xml
+
+# deliver temporary files
+fastlane/Preview.html
+
+# snapshot generated screenshots
+fastlane/screenshots
+
+# scan temporary files
+fastlane/test_output
