@@ -20,7 +20,6 @@ public class MainActivity extends AppCompatActivity {
     EditText userInputField;
     static long timeTaken, start, end;
     static long total;
-    final static int ARRAY_LENGTH = 10000000;
     static Handler mainHandler;
 
     @Override
@@ -54,35 +53,34 @@ public class MainActivity extends AppCompatActivity {
         doConcurrentSummation(Long.parseLong(userInputField.getText().toString()));
     }
 
-    private void doConcurrentSummation(long size) {
+    private void doConcurrentSummation(final long size) {
         start = System.currentTimeMillis();
+        final int numCores = Runtime.getRuntime().availableProcessors();
 
-        int numArrays = (int) Math.floor(size / ARRAY_LENGTH);
-        final long remainingSize = (size - (ARRAY_LENGTH * numArrays));
-
-        for (long i = 0; i < numArrays; i++) {
-            CalculationThreadPool.post(new Runnable() {
-                @Override
-                public void run() {
-                    int[] data = populateArray(ARRAY_LENGTH);
-                    long threadSum = doThreadSum(data);
-                    addToOverallSum(threadSum);
-                    mainHandler.post(updateUI());
-                }
-            });
-        }
+        final long remainingSize = size%numCores;
 
         if (remainingSize > 0) {
             CalculationThreadPool.post(new Runnable() {
                 @Override
                 public void run() {
-                    int[] data = populateArray((int)remainingSize);
-                    long threadSum = doThreadSum(data);
+                    long threadSum = doThreadSum(remainingSize + size/numCores);
                     addToOverallSum(threadSum);
                     mainHandler.post(updateUI());
                 }
             });
         }
+
+        for (int i = 0; i < numCores-1; i++) {
+            CalculationThreadPool.post(new Runnable() {
+                @Override
+                public void run() {
+                    long threadSum = doThreadSum(size/numCores);
+                    addToOverallSum(threadSum);
+                    mainHandler.post(updateUI());
+                }
+            });
+        }
+
     }
 
     private Runnable updateUI() {
@@ -98,22 +96,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private long doThreadSum(int[] data) {
-        long sum = 0;
-        for (int i = 0; i < data.length; i++) {
-            sum += data[i];
-        }
-        Log.d("doing thread sum", "thread sum: " + ((Long) sum).toString());
-        return sum;
-    }
-
-    private int[] populateArray(int size) {
-        int[] array = new int[size];
+    private long doThreadSum(long size) {
         Random rgn = new Random();
-        for (int i = 0; i < array.length; i++) {
-            array[i] = rgn.nextInt(100) + 1;
+        long sum = 0;
+        for (long i = 0; i < size; i++) {
+            sum += rgn.nextInt(100);
         }
-        return array;
+        return sum;
     }
 
     private void addToOverallSum(long partialSum) {
