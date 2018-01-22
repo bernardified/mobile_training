@@ -57,37 +57,32 @@ public class MainActivity extends AppCompatActivity {
         start = System.currentTimeMillis();
         final int numCores = Runtime.getRuntime().availableProcessors();
 
-        final long remainingSize = size%numCores;
+        for (int i = 0; i< numCores; i++) {
+            final long chunkSize;
 
-        if (remainingSize > 0) {
+            if (i == numCores-1) {
+                chunkSize = size/numCores + size%numCores;
+            } else {
+                chunkSize = size/numCores;
+            }
+
             CalculationThreadPool.post(new Runnable() {
                 @Override
                 public void run() {
-                    long threadSum = doThreadSum(remainingSize + size/numCores);
-                    addToOverallSum(threadSum);
-                    mainHandler.post(updateUI());
+                    long threadSum = doThreadSum(chunkSize);
+                    mainHandler.post(updateUI(threadSum));
                 }
             });
         }
-
-        for (int i = 0; i < numCores-1; i++) {
-            CalculationThreadPool.post(new Runnable() {
-                @Override
-                public void run() {
-                    long threadSum = doThreadSum(size/numCores);
-                    addToOverallSum(threadSum);
-                    mainHandler.post(updateUI());
-                }
-            });
-        }
-
     }
 
-    private Runnable updateUI() {
+    private Runnable updateUI(final long threadSum) {
         return new  Runnable() {
             public void run() {
                 end = System.currentTimeMillis();
                 timeTaken = end - start;
+
+                addToOverallSum(threadSum);
 
                 sumView.setText(((Long) total).toString());
                 timeTakenView.setText("Time taken: "+((Long) timeTaken).toString()+ "ms");

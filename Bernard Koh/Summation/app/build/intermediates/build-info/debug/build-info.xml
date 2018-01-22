@@ -5,28 +5,23 @@
     build-mode="COLD"
     density="560dpi"
     format="10"
-    ir-eligibility="COMPATIBLE"
     plugin-version="3.0.1"
-    timestamp="1516593823539"
+    timestamp="1516599225580"
     token="3397025561450801349"
     verifier="COLD_SWAP_REQUESTED" >
 
     <task
         name="javac"
-        duration="384" />
+        duration="0" />
     <task
         name="instant-run-dex"
         duration="0" />
     <task
         name="instant-run-transform"
-        duration="199" />
+        duration="0" />
     <task
         name="verifier"
-        duration="61" />
-
-    <artifact
-        location="/Users/bernardkoh/iCloud_Drive_Archive/Documents/OneDrive/Documents/Work/ShopBack/mobile_training/Bernard Koh/Summation/app/build/intermediates/split-apk/debug/slices/slice_4.apk"
-        type="SPLIT" />
+        duration="0" />
 
     <build
         build-mode="FULL"
@@ -71,12 +66,16 @@
     </build>
     <build
         build-mode="COLD"
-        ir-eligibility="COMPATIBLE"
-        timestamp="1516593823539"
+        ir-eligibility="FIELD_REMOVED"
+        timestamp="1516598476865"
         verifier="COLD_SWAP_REQUESTED" >
         <artifact
             location="/Users/bernardkoh/iCloud_Drive_Archive/Documents/OneDrive/Documents/Work/ShopBack/mobile_training/Bernard Koh/Summation/app/build/intermediates/split-apk/debug/slices/slice_4.apk"
             type="SPLIT" />
     </build>
+    <build
+        build-mode="COLD"
+        timestamp="1516599225580"
+        verifier="COLD_SWAP_REQUESTED" />
 
 </instant-run>
