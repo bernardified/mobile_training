@@ -29,7 +29,8 @@
         android:layout_above="@id/sum_button"
         android:gravity="center"
         android:hint="Enter number of integers"
-        android:inputType="numberSigned" />
+        android:inputType="number"
+        android:digits="0123456789"/>
 
     <TextView
         android:id="@+id/time_taken_view"

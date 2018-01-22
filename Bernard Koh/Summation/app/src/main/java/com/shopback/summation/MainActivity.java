@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         start = System.currentTimeMillis();
 
         int numArrays = (int) Math.floor(size / ARRAY_LENGTH);
-        final int remainingSize = (int) size - (ARRAY_LENGTH * numArrays);
+        final long remainingSize = (size - (ARRAY_LENGTH * numArrays));
 
         for (long i = 0; i < numArrays; i++) {
             CalculationThreadPool.post(new Runnable() {
@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
             CalculationThreadPool.post(new Runnable() {
                 @Override
                 public void run() {
-                    int[] data = populateArray(remainingSize);
+                    int[] data = populateArray((int)remainingSize);
                     long threadSum = doThreadSum(data);
                     addToOverallSum(threadSum);
                     mainHandler.post(updateUI());

@@ -18,11 +18,10 @@ public class CalculationThreadPool {
     private static final int KEEP_ALIVE = 10;
     BlockingQueue<Runnable> calculationQueue = new LinkedBlockingQueue<>();
 
-    static Long startTime, endTime, timeTaken;
 
     private CalculationThreadPool() {
         int coreNum = Runtime.getRuntime().availableProcessors();
-        MAX_POOL_SIZE = 100;
+        MAX_POOL_SIZE = 10;
         mThreadPoolExecutor = new ThreadPoolExecutor(coreNum, MAX_POOL_SIZE, KEEP_ALIVE, TimeUnit.SECONDS, calculationQueue);
     }
 
@@ -30,12 +29,7 @@ public class CalculationThreadPool {
         if(mInstance == null) {
             mInstance = new CalculationThreadPool();
         }
-        startTime = System.currentTimeMillis();
         mInstance.mThreadPoolExecutor.execute(runnable);
-    }
-
-    public static ThreadPoolExecutor getThreadPoolExecutor() {
-        return mThreadPoolExecutor;
     }
 
 }
