@@ -20,6 +20,8 @@ public class MainActivity extends AppCompatActivity {
     EditText userInputField;
     static long timeTaken, start, end;
     static long total;
+    static int completedCounter;
+
     static Handler mainHandler;
 
     @Override
@@ -50,6 +52,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void calculateSum(View view) {
         total = 0;
+        completedCounter = 0;
+        sumView.setText("Calculating...");
+        sumView.setTextSize(50);
+        timeTakenView.setText("");
         doConcurrentSummation(Long.parseLong(userInputField.getText().toString()));
     }
 
@@ -82,14 +88,16 @@ public class MainActivity extends AppCompatActivity {
                 end = System.currentTimeMillis();
                 timeTaken = end - start;
 
-                addToOverallSum(threadSum);
+                total += threadSum;
 
-                sumView.setText(((Long) total).toString());
-                timeTakenView.setText("Time taken: "+((Long) timeTaken).toString()+ "ms");
+                if (++completedCounter == Runtime.getRuntime().availableProcessors()) {
+                    sumView.setText(((Long) total).toString());
+                    sumView.setTextSize(100);
+                    timeTakenView.setText("Time taken: "+((Long) timeTaken).toString()+ "ms");
+                }
             }
         };
     }
-
 
     private long doThreadSum(long size) {
         Random rgn = new Random();
@@ -99,11 +107,5 @@ public class MainActivity extends AppCompatActivity {
         }
         return sum;
     }
-
-    private void addToOverallSum(long partialSum) {
-        total += partialSum;
-        Log.d("Total Sum", ((Long) total).toString());
-    }
-
 
 }
