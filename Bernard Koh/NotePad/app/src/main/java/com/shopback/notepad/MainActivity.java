@@ -1,92 +1,88 @@
 package com.shopback.notepad;
 
-import android.app.ListActivity;
-import android.database.Cursor;
+import android.graphics.Canvas;
 import android.os.Bundle;
 
-import android.view.ContextMenu;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.AdapterView;
-import android.widget.SimpleCursorAdapter;
 
 import android.content.Intent;
 import android.view.View;
-import android.widget.ListView;
+import android.widget.ImageButton;
 
-public class MainActivity extends ListActivity {
+public class MainActivity extends AppCompatActivity {
     private static final int ACTIVITY_CREATE=0;
     private static final int ACTIVITY_EDIT=1;
 
     private static final int INSERT_ID = Menu.FIRST;
-    private static final int DELETE_ID = Menu.FIRST + 1;
 
     private NotesDbAdapter mDbHelper;
+    private NotesRecyclerAdapter notesRecyclerAdapter;
+    private RecyclerView notesRecyclerView;
+
+    private ImageButton addButton;
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         mDbHelper = new NotesDbAdapter(this);
         mDbHelper.open();
-        fillData();
-        registerForContextMenu(getListView());
+
+        addButton = findViewById(R.id.add_button);
+        addButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createNote();
+            }
+        });
+
+        loadNotesRecyclerView();
     }
 
-    private void fillData() {
-        // Get all of the rows from the database and create the item list
-        Cursor cursor = mDbHelper.fetchAllNotes();
-        startManagingCursor(cursor);
+    @Override
+    public void onStart() {
+        mDbHelper.open();
+        super.onStart();
+    }
 
-        // Create an array to specify the fields we want to display in the list (only TITLE)
-        String[] from = new String[]{NotesDbAdapter.KEY_TITLE};
+    @Override
+    public void onResume() {
+        super.onResume();
+    }
 
-        // and an array of the fields we want to bind those fields to (in this case just text1)
-        int[] to = new int[]{R.id.text1};
-
-        // Now create a simple cursor adapter and set it to display
-        SimpleCursorAdapter notes =
-                new SimpleCursorAdapter(this, R.layout.note_row, cursor, from, to);
-        setListAdapter(notes);
+    @Override
+    public void onDestroy() {
+        mDbHelper.close();
+        super.onDestroy();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-        menu.add(0, INSERT_ID,0, R.string.menu_insert);
+        menu.add(0, INSERT_ID,0, "Add 1000 columns");
         return true;
     }
 
     @Override
-    public boolean onMenuItemSelected(int featureId, MenuItem item) {
+    public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()) {
             case INSERT_ID:
-                createNote();
+                new Thread() {
+                    @Override
+                    public void run() {
+                        mDbHelper.addManyColumns();
+                    }
+                }.start();
                 return true;
         }
-
-        return super.onMenuItemSelected(featureId, item);
-    }
-
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v,
-                                    ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-
-        menu.add(0, DELETE_ID, 0, R.string.menu_delete);
-    }
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case DELETE_ID:
-                AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-                mDbHelper.deleteNote(info.id);
-                fillData();
-        }
-        return super.onContextItemSelected(item);
-
+        return false;
     }
 
     private void createNote() {
@@ -95,18 +91,47 @@ public class MainActivity extends ListActivity {
     }
 
     @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
-        super.onListItemClick(l, v, position, id);
-        Intent editNoteIntent = new Intent(this, NoteEdit.class);
-        editNoteIntent.putExtra(NotesDbAdapter.KEY_ROWID, id);
-        startActivityForResult(editNoteIntent, ACTIVITY_EDIT);
-    }
-
-    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
         if (resultCode == RESULT_OK) {
-            fillData();
+            if (requestCode == ACTIVITY_CREATE) {
+                notesRecyclerAdapter.addNewNote(mDbHelper.fetchListOfNotes());
+            } else if (requestCode == ACTIVITY_EDIT){
+                notesRecyclerAdapter.updateNote(mDbHelper.fetchListOfNotes());
+            }
         }
+    }
+
+    private void loadNotesRecyclerView() {
+        notesRecyclerView = findViewById(R.id.notes_recycler_view);
+        notesRecyclerView.setHasFixedSize(true);
+        notesRecyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
+        notesRecyclerAdapter = new NotesRecyclerAdapter(mDbHelper.fetchListOfNotes());
+        notesRecyclerView.setAdapter(notesRecyclerAdapter);
+
+        //swipe to delete or edit
+        final SwipeController swipeController = new SwipeController(new SwipeControllerActions() {
+            @Override
+            public void onLeftButtonClicked(long rowId, int position) {
+                Intent editNoteIntent = new Intent(MainActivity.this, NoteEdit.class);
+                editNoteIntent.putExtra(NotesDbAdapter.KEY_ROWID, rowId);
+                startActivityForResult(editNoteIntent, ACTIVITY_EDIT);
+            }
+
+            @Override
+            public void onRightButtonClicked(long rowId, int position) {
+                mDbHelper.deleteNote(rowId);
+                notesRecyclerAdapter.deleteNote(position);
+            }
+        });
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(swipeController);
+        itemTouchHelper.attachToRecyclerView(notesRecyclerView);
+
+        notesRecyclerView.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override
+            public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
+                swipeController.onDraw(c);
+            }
+        });
     }
 }

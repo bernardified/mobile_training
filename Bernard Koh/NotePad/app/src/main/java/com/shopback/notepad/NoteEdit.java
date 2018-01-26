@@ -1,5 +1,6 @@
 package com.shopback.notepad;
 
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -8,6 +9,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class NoteEdit extends AppCompatActivity {
 
@@ -51,7 +54,13 @@ public class NoteEdit extends AppCompatActivity {
         confirmButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                setResult(RESULT_OK);
+                Bundle extra = new Bundle();
+                if(mRowId != null) {
+                    extra.putLong(NotesDbAdapter.KEY_ROWID, mRowId);
+                }
+                Intent sendBackIntent = new Intent();
+                sendBackIntent.putExtras(extra);
+                setResult(RESULT_OK, sendBackIntent);
                 finish();
             }
         });
@@ -79,18 +88,29 @@ public class NoteEdit extends AppCompatActivity {
 
     private void saveCurrentNote() {
         String title = titleText.getText().toString();
-        String body = titleText.getText().toString();
+        String body = bodyText.getText().toString();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy hh:mm");
+        long currTime = new Date().getTime();
+        String date = sdf.format(currTime);
+
+        if (title.equals("")) {
+            if (body.equals("")) {
+                return;
+            } else {
+                title = "Untitled";
+            }
+        }
 
         if (mRowId == null) {
-            long id = mDbHelper.createNote(title, body);
+            long id = mDbHelper.createNote(title, body, date);
             if (id > 0) {
                 mRowId = id;
             }
         } else {
-            mDbHelper.updateNote(mRowId, title, body);
+            mDbHelper.updateNote(mRowId, title, body, date);
         }
     }
-
 
     private void displayNote() {
         if (mRowId != null) {
@@ -98,6 +118,7 @@ public class NoteEdit extends AppCompatActivity {
             startManagingCursor(note);
             titleText.setText(note.getString(note.getColumnIndexOrThrow(NotesDbAdapter.KEY_TITLE)));
             bodyText.setText(note.getString(note.getColumnIndexOrThrow(NotesDbAdapter.KEY_BODY)));
+
         }
     }
 }

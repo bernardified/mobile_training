@@ -12,21 +12,19 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-/**
- * Simple notes database access helper class. Defines the basic CRUD operations
- * for the notepad example, and gives the ability to list all notes as well as
- * retrieve or modify a specific note.
- *
- * This has been improved from the first version of this tutorial through the
- * addition of better error handling and also using returning a Cursor instead
- * of using a collection of inner classes (which is less scalable and not
- * recommended).
- */
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
 public class NotesDbAdapter {
 
     static final String KEY_TITLE = "title";
     static final String KEY_BODY = "body";
     static final String KEY_ROWID = "_id";
+    static final String KEY_DATE = "b_day";
 
     private static final String TAG = "NotesDbAdapter";
     private DatabaseHelper mDbHelper;
@@ -37,11 +35,10 @@ public class NotesDbAdapter {
      */
     private static final String DATABASE_CREATE =
             "create table notes (_id integer primary key autoincrement, "
-                    + "title text not null, body text not null);";
-
+                    + "title text not null, body text not null, b_day text not null);";
     private static final String DATABASE_NAME = "data";
     private static final String DATABASE_TABLE = "notes";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 9;
 
     private final Context mCtx;
 
@@ -53,16 +50,31 @@ public class NotesDbAdapter {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-
             db.execSQL(DATABASE_CREATE);
         }
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
-                    + newVersion + ", which will destroy all old data");
-            db.execSQL("DROP TABLE IF EXISTS notes");
-            onCreate(db);
+                    + newVersion);
+            if (oldVersion < 9) {
+                upgradeVersion7(db);
+            }
+        }
+
+        private void upgradeVersion7(SQLiteDatabase db) {
+            db.execSQL("ALTER TABLE " + DATABASE_TABLE + " ADD COLUMN " + KEY_DATE + " text");
+            Cursor cursor = db.query(DATABASE_TABLE, new String[]{KEY_ROWID, KEY_DATE},
+                    null, null, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                ContentValues dates = new ContentValues();
+                String date = new SimpleDateFormat("dd-MM-YYYY HH:MM",
+                        Locale.getDefault()).format(Calendar.getInstance().getTime());
+                dates.put(KEY_DATE, date);
+                db.update(DATABASE_TABLE, dates, null, null);
+
+                cursor.close();
+            }
         }
     }
 
@@ -82,7 +94,7 @@ public class NotesDbAdapter {
      * signal the failure
      *
      * @return this (self reference, allowing this to be chained in an
-     *         initialization call)
+     * initialization call)
      * @throws SQLException if the database could be neither opened or created
      */
     public NotesDbAdapter open() throws SQLException {
@@ -102,13 +114,14 @@ public class NotesDbAdapter {
      * a -1 to indicate failure.
      *
      * @param title the title of the note
-     * @param body the body of the note
+     * @param body  the body of the note
      * @return rowId or -1 if failed
      */
-    long createNote(String title, String body) {
+    long createNote(String title, String body, String date) {
         ContentValues initialValues = new ContentValues();
         initialValues.put(KEY_TITLE, title);
         initialValues.put(KEY_BODY, body);
+        initialValues.put(KEY_DATE, date);
 
         return mDb.insert(DATABASE_TABLE, null, initialValues);
     }
@@ -119,7 +132,7 @@ public class NotesDbAdapter {
      * @param rowId id of note to delete
      * @return true if deleted, false otherwise
      */
-    public boolean deleteNote(long rowId) {
+    boolean deleteNote(long rowId) {
 
         return mDb.delete(DATABASE_TABLE, KEY_ROWID + "=" + rowId, null) > 0;
     }
@@ -129,10 +142,23 @@ public class NotesDbAdapter {
      *
      * @return Cursor over all notes
      */
-    Cursor fetchAllNotes() {
+    private Cursor fetchAllNotes() {
 
-        return mDb.query(DATABASE_TABLE, new String[] {KEY_ROWID, KEY_TITLE,
-                KEY_BODY}, null, null, null, null, null);
+        return mDb.query(DATABASE_TABLE, new String[]{KEY_ROWID, KEY_TITLE,
+                KEY_BODY, KEY_DATE}, null, null, null, null, null);
+    }
+
+    List<Note> fetchListOfNotes() {
+        List<Note> list = new ArrayList<>();
+        Cursor cursor = fetchAllNotes();
+        while (cursor.moveToNext()) {
+            Long rowId = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ROWID));
+            String title = cursor.getString(cursor.getColumnIndexOrThrow(KEY_TITLE));
+            String body = cursor.getString(cursor.getColumnIndexOrThrow(KEY_BODY));
+            String date = cursor.getString(cursor.getColumnIndexOrThrow(KEY_DATE));
+            list.add(new Note(rowId, title, body, Note.NoteType.NOTES, date));
+        }
+        return list;
     }
 
     /**
@@ -142,11 +168,11 @@ public class NotesDbAdapter {
      * @return Cursor positioned to matching note, if found
      * @throws SQLException if note could not be found/retrieved
      */
-    public Cursor fetchNote(long rowId) throws SQLException {
+    Cursor fetchNote(long rowId) throws SQLException {
 
-        Cursor mCursor = mDb.query(true, DATABASE_TABLE, new String[] {KEY_ROWID,
-                                KEY_TITLE, KEY_BODY}, KEY_ROWID + "=" + rowId, null,
-                        null, null, null, null);
+        Cursor mCursor = mDb.query(true, DATABASE_TABLE, new String[]{KEY_ROWID,
+                        KEY_TITLE, KEY_BODY}, KEY_ROWID + "=" + rowId, null,
+                null, null, null, null);
         if (mCursor != null) {
             mCursor.moveToFirst();
         }
@@ -161,14 +187,43 @@ public class NotesDbAdapter {
      *
      * @param rowId id of note to update
      * @param title value to set note title to
-     * @param body value to set note body to
+     * @param body  value to set note body to
      * @return true if the note was successfully updated, false otherwise
      */
-    public boolean updateNote(long rowId, String title, String body) {
+    boolean updateNote(long rowId, String title, String body, String date) {
         ContentValues args = new ContentValues();
         args.put(KEY_TITLE, title);
         args.put(KEY_BODY, body);
+        args.put(KEY_DATE, date);
 
         return mDb.update(DATABASE_TABLE, args, KEY_ROWID + "=" + rowId, null) > 0;
+    }
+
+
+    void addManyColumns() {
+        long startTime = System.currentTimeMillis();
+        mDb.beginTransaction();
+        try {
+            for(int i = 0; i<500; i++) {
+                String colName = "col" + i;
+                mDb.execSQL("ALTER TABLE "+ DATABASE_TABLE+" ADD COLUMN " + colName + " text");
+            }
+            mDb.setTransactionSuccessful();
+        } finally {
+            mDb.endTransaction();
+        }
+        long endTime = System.currentTimeMillis();
+        Log.e("add Columns", "time taken with batch ops = " + (endTime - startTime));
+
+        startTime = System.currentTimeMillis();
+        for(int i = 500; i<1000; i++) {
+            String colName = "col" + i;
+            mDb.execSQL("ALTER TABLE "+ DATABASE_TABLE+" ADD COLUMN " + colName + " text");
+        }
+        endTime = System.currentTimeMillis();
+        Log.e("add Columns", "time taken without batch ops= " + (endTime - startTime));
+
+        mDb.execSQL("DROP TABLE " + DATABASE_TABLE);
+        mDb.execSQL(DATABASE_CREATE);
     }
 }
