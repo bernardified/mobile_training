@@ -1,11 +1,10 @@
-package com.shopback.nardweather;
+package com.shopback.nardweather.NoArchitecture;
 
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
@@ -17,7 +16,6 @@ import android.os.Bundle;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.text.InputType;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -28,12 +26,13 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.support.v7.widget.RecyclerView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.shopback.nardweather.R;
+import com.shopback.nardweather.util.Util;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -173,7 +172,6 @@ public class WeatherActivity extends AppCompatActivity {
 
         LayoutInflater inflater = LayoutInflater.from(this);
         View inputDialog = inflater.inflate(R.layout.add_cities_input_dialog, null);
-        //TODO: convert to layout xml format
 
         final EditText inputOne = inputDialog.findViewById(R.id.inputOne);
         final EditText inputTwo = inputDialog.findViewById(R.id.inputTwo);
@@ -514,9 +512,9 @@ public class WeatherActivity extends AppCompatActivity {
         //setting up recycler view
         weatherRecyclerView = findViewById(R.id.weather_recycler_view);
         weatherRecyclerView.setHasFixedSize(true);
-        RecyclerView.ItemDecoration itemDecoration =
+        /*RecyclerView.ItemDecoration itemDecoration =
                 new DividerItemDecoration(this,DividerItemDecoration.VERTICAL);
-        weatherRecyclerView.addItemDecoration(itemDecoration);
+        weatherRecyclerView.addItemDecoration(itemDecoration);*/
         //connecting to layout manager
         cityList = loadCityPref();
         weatherCache = loadWeatherPref();

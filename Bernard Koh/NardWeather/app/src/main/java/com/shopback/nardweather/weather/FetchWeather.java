@@ -1,9 +1,13 @@
-package com.shopback.nardweather;
+package com.shopback.nardweather.weather;
 
 import android.content.Context;
-import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
+
+import com.shopback.nardweather.NoArchitecture.NetworkReceiver;
+import com.shopback.nardweather.R;
+import com.shopback.nardweather.data.Weather;
+import com.shopback.nardweather.util.Util;
 
 import org.json.JSONObject;
 
@@ -24,11 +28,10 @@ class FetchWeather {
      * Retrieves city's weather information from openweathermap.org. The JSONObject is null if the
      * input city is empty. Invalid city name will throw an exception
      *
-     * @param context: Context
      * @param city:    String
      * @return WeatherResults
      */
-    static WeatherResults getWeather(Context context, String city){
+    static Weather getWeather(Context context, String city){
         HttpURLConnection connection;
         try {
             //ignore empty input
@@ -38,8 +41,8 @@ class FetchWeather {
 
             if (NetworkReceiver.getInstance().getNetworkStatus() == Util.NETWORK_ERROR_ID) {
                 Log.d("getWeather", "no network");
-                WeatherResults result = new WeatherResults(city, "","","","");
-                result.setResulType(WeatherResults.ResultType.OFFLINE);
+                Weather result = new Weather(city, "","","","");
+                result.setResultType(Weather.ResultType.OFFLINE.ordinal());
                 return result;
             }
 
@@ -49,7 +52,7 @@ class FetchWeather {
             }
 
             String fullString = String.format(OPEN_WEATHER_MAP_API_CALL, city,
-                    context.getString(R.string.open_weather_map_api_key));
+                   context.getString(R.string.open_weather_map_api_key));
 
             URL url = new URL(fullString);
             connection = (HttpURLConnection) url.openConnection();
@@ -81,12 +84,12 @@ class FetchWeather {
         }catch (SocketTimeoutException e) {
             Message errorMessage = Util.generateMessage(Util.ERROR_MESSAGE_KEY, Util.NETWORK_TIMEOUT,
                     Util.CONNECTION_TIMEOUT_MESSAGE);
-            WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
-            NetworkReceiver.setNetworkStatus(Util.NETWORK_SLOW);
+//            WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
+//            NetworkReceiver.setNetworkStatus(Util.NETWORK_SLOW);
         } catch (Exception e) {
             Message errorMessage = Util.generateMessage(Util.ERROR_MESSAGE_KEY, Util.INVALID_CITY,
                     city + Util.INVALID_CITY_MESSAGE);
-            WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
+//            WeatherManager.getInstance().getMainThreadHandler().sendMessage(errorMessage);
         }
         return null;
     }
@@ -98,8 +101,8 @@ class FetchWeather {
      * @param data: JSONObject
      * @return WeatherResults. Exception is called if any of the weather info cannot be retrieved
      */
-    private static WeatherResults parseResult(JSONObject data) {
-        WeatherResults results;
+    private static Weather parseResult(JSONObject data) {
+        Weather results;
         try {
             JSONObject detailsInfo, main;
             String city, lastUpdated, details, temperature, weatherIcon;
@@ -125,8 +128,8 @@ class FetchWeather {
             /*create the WeatherResults object from the retrieved information and increment the
             number of WeatherResults object created by 1
              */
-            results = new WeatherResults(city, lastUpdated, details, temperature, weatherIcon);
-            results.setResulType(WeatherResults.ResultType.NORMAL);
+            results = new Weather(city, lastUpdated, details, temperature, weatherIcon);
+            results.setResultType(Weather.ResultType.NORMAL.ordinal());
 
         } catch (Exception e) {
             results = null;

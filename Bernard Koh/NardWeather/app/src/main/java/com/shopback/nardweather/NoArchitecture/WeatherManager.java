@@ -1,12 +1,13 @@
-package com.shopback.nardweather;
+package com.shopback.nardweather.NoArchitecture;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 import android.widget.Toast;
+
+import com.shopback.nardweather.util.Util;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;

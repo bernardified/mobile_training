@@ -1,12 +1,13 @@
-package com.shopback.nardweather;
+package com.shopback.nardweather.NoArchitecture;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.NetworkInfo;
-import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
+
+import com.shopback.nardweather.util.Util;
 
 public class NetworkReceiver extends BroadcastReceiver {
 

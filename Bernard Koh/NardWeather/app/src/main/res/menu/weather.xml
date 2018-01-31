@@ -2,7 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.shopback.nardweather.WeatherActivity" >
+    tools:context="com.shopback.nardweather.NoArchitecture.WeatherActivity" >
 
     <item
         android:id="@+id/add_cities"

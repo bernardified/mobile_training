@@ -1,9 +1,11 @@
-package com.shopback.nardweather;
+package com.shopback.nardweather.NoArchitecture;
 
 import android.graphics.Typeface;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
+
+import com.shopback.nardweather.R;
 
 class ViewHolderWeather extends RecyclerView.ViewHolder {
 

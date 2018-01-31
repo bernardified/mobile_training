@@ -1,4 +1,4 @@
-package com.shopback.nardweather;
+package com.shopback.nardweather.NoArchitecture;
 
 
 import android.content.Context;
@@ -8,6 +8,8 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import com.shopback.nardweather.R;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +28,7 @@ public class WeatherAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     private final int NORMAL = 0, OFFLINE = 1;
 
-    WeatherAdapter(Context context, List<String> cities, HashMap<String, WeatherResults> dataSet) {
+    public WeatherAdapter(Context context, List<String> cities, HashMap<String, WeatherResults> dataSet) {
         this.cities = cities;
         this.dataSet = dataSet;
         this.context = context;

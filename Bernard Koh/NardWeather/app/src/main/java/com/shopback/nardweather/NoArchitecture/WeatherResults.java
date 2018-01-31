@@ -1,4 +1,4 @@
-package com.shopback.nardweather;
+package com.shopback.nardweather.NoArchitecture;
 
 
 class WeatherResults {

@@ -7,7 +7,7 @@
     android:paddingRight="16dp"
     android:paddingTop="16dp"
     android:background="#DCDCDC"
-    tools:context="com.shopback.nardweather.WeatherActivity">
+    tools:context="com.shopback.nardweather.NoArchitecture.WeatherActivity">
 
 
     <TextView

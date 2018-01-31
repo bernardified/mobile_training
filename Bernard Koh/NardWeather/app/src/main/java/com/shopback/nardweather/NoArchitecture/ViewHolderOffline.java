@@ -1,8 +1,10 @@
-package com.shopback.nardweather;
+package com.shopback.nardweather.NoArchitecture;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
+
+import com.shopback.nardweather.R;
 
 class ViewHolderOffline extends RecyclerView.ViewHolder {
     //view holder of offline items
