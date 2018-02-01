@@ -23,6 +23,7 @@ import java.util.Locale;
 class FetchWeather {
     private static final String DEFAULT_SINGAPORE = "Singapore, SG";
     private static final String OPEN_WEATHER_MAP_API_CALL = "http://api.openweathermap.org/data/2.5/weather?q=%s&units=metric&appid=%s";
+    private static final String OPEN_WEATHER_API_KEY = "1bab5a3cc4e7423879bea7b2dea70edc";
 
     /**
      * Retrieves city's weather information from openweathermap.org. The JSONObject is null if the
@@ -31,7 +32,7 @@ class FetchWeather {
      * @param city:    String
      * @return WeatherResults
      */
-    static Weather getWeather(Context context, String city){
+    static Weather getWeather(String city){
         HttpURLConnection connection;
         try {
             //ignore empty input
@@ -51,8 +52,7 @@ class FetchWeather {
                 city = DEFAULT_SINGAPORE;
             }
 
-            String fullString = String.format(OPEN_WEATHER_MAP_API_CALL, city,
-                   context.getString(R.string.open_weather_map_api_key));
+            String fullString = String.format(OPEN_WEATHER_MAP_API_CALL, city, OPEN_WEATHER_API_KEY);
 
             URL url = new URL(fullString);
             connection = (HttpURLConnection) url.openConnection();

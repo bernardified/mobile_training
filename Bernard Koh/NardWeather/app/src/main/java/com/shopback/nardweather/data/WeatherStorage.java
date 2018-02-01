@@ -12,7 +12,6 @@ public class WeatherStorage implements WeatherDataSource {
     private final WeatherDataSource localDataSource;
 
     HashMap<String, Weather> cache;
-    boolean isCacheDirty = false;
 
     public static WeatherStorage getInstance(WeatherDataSource localDatabase) {
         if (storageInstance == null) {
@@ -23,16 +22,11 @@ public class WeatherStorage implements WeatherDataSource {
 
     private WeatherStorage(WeatherDataSource localDataSource) {
         this.localDataSource = localDataSource;
-        cache = new HashMap<>();
-    }
-
-    public static void destroyInstance() {
-        storageInstance = null;
     }
 
     @Override
     public void getWeatherList(final LoadWeatherCallback callback) {
-        if (cache != null && !isCacheDirty) {
+        if (cache != null) {
             callback.onWeatherLoaded(new ArrayList<>(cache.values()));
             Log.d("Weather Storage", "show weather with cache size" + cache.size());
             return;
@@ -41,7 +35,7 @@ public class WeatherStorage implements WeatherDataSource {
             localDataSource.getWeatherList(new LoadWeatherCallback() {
                 @Override
                 public void onWeatherLoaded(List<Weather> weatherList) {
-                    refreshCache(weatherList);
+                    loadCache(weatherList);
                     callback.onWeatherLoaded(new ArrayList<>(cache.values()));
                 }
 
@@ -70,13 +64,8 @@ public class WeatherStorage implements WeatherDataSource {
         localDataSource.updateWeather(weather);
     }
 
-    @Override
-    public void refreshAllWeather() {
-        isCacheDirty = true;
-    }
 
-
-    private void refreshCache(List<Weather> weatherList) {
+    private void loadCache(List<Weather> weatherList) {
         if (cache == null) {
             cache = new HashMap<>();
         }
@@ -84,7 +73,6 @@ public class WeatherStorage implements WeatherDataSource {
         for (Weather weather : weatherList) {
             cache.put(weather.getId(), weather);
         }
-        isCacheDirty = false;
     }
 
 }

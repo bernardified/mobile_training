@@ -135,7 +135,7 @@ public class WeatherFragment extends Fragment implements WeatherContract.View {
                     @Override
                     //change city when Go Button pressed and store city in SharedPreference
                     public void onClick(DialogInterface dialog, int id) {
-                        weatherPresenter.addNewCities(getContext(),new LinkedList<>(Arrays.asList(
+                        weatherPresenter.addNewCities(new LinkedList<>(Arrays.asList(
                                 inputOne.getText().toString(),
                                 inputTwo.getText().toString(),
                                 inputThree.getText().toString()))

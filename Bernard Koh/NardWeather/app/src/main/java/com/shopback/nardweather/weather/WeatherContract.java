@@ -28,7 +28,7 @@ public interface WeatherContract {
 
         void loadWeather(boolean forceUpdate);
 
-        void addNewCities(Context context, List<String> newCities);
+        void addNewCities(List<String> newCities);
 
         void deleteCity(String city);
     }

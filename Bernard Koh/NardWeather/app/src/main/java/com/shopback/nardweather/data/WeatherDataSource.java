@@ -22,5 +22,4 @@ public interface WeatherDataSource {
 
     void updateWeather(Weather weather);
 
-    void refreshAllWeather();
 }

@@ -90,10 +90,4 @@ public class LocalWeatherDataSource implements WeatherDataSource {
         };
         threadManager.getDiskThreadPool().execute(updateRunnable);
     }
-
-    @Override
-    public void refreshAllWeather() {
-
-    }
-
 }
