@@ -7,6 +7,7 @@ import com.shopback.nardweather.R;
 import com.shopback.nardweather.data.WeatherStorage;
 import com.shopback.nardweather.data.local.LocalWeatherDataSource;
 import com.shopback.nardweather.data.local.WeatherDatabase;
+import com.shopback.nardweather.data.remote.RemoteWeatherDataSource;
 import com.shopback.nardweather.util.ThreadManager;
 
 public class WeatherActivity extends AppCompatActivity {
@@ -23,9 +24,11 @@ public class WeatherActivity extends AppCompatActivity {
         WeatherDatabase database = WeatherDatabase.getInstance(this);
         ThreadManager threadManager = ThreadManager.getInstance(this);
         WeatherStorage weatherStorage = WeatherStorage.getInstance(
-                LocalWeatherDataSource.getInstance(threadManager, database.weatherDao()));
+                LocalWeatherDataSource.getInstance(threadManager, database.weatherDao()),
+                RemoteWeatherDataSource.getInstance(threadManager));
+
         weatherView = (WeatherFragment) getFragmentManager().findFragmentById(R.id.weather_fragment);
 
-        weatherPresenter = new WeatherPresenter(weatherStorage, weatherView, threadManager);
+        weatherPresenter = new WeatherPresenter(weatherStorage, weatherView);
     }
 }

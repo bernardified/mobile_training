@@ -56,6 +56,30 @@ public class LocalWeatherDataSource implements WeatherDataSource {
     }
 
     @Override
+    public void getWeather(final String city, final FetchWeatherCallback callback) {
+        Runnable getWeatherRunnable = new Runnable() {
+
+            @Override
+            public void run() {
+                final Weather weather = weatherDao.getWeatherByCity(city);
+                threadManager.mainThread().execute(new Runnable(){
+
+                    @Override
+                    public void run() {
+                        if (weather != null) {
+                            callback.onWeatherFetched(weather);
+                        } else {
+                            callback.onDataNotFetched();
+                        }
+                    }
+                });
+            }
+        };
+
+        threadManager.getDiskThreadPool().execute(getWeatherRunnable);
+    }
+
+    @Override
     public void saveWeather(final Weather weather) {
         Runnable saveRunnable = new Runnable() {
 
@@ -89,5 +113,22 @@ public class LocalWeatherDataSource implements WeatherDataSource {
             }
         };
         threadManager.getDiskThreadPool().execute(updateRunnable);
+    }
+
+    @Override
+    public void refreshAll() {
+
+    }
+
+    public void deleteAllWeather() {
+        Runnable deleteAllRunnable = new Runnable() {
+
+            @Override
+            public void run() {
+                weatherDao.deleteAllWeather();
+            }
+        };
+
+        threadManager.getDiskThreadPool().execute(deleteAllRunnable);
     }
 }

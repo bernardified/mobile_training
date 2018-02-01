@@ -19,15 +19,25 @@ public interface WeatherDao {
      * @return weather info of all cities
      */
     @Query("SELECT * FROM weather")
-    public List<Weather> getAllWeather();
+    List<Weather> getAllWeather();
 
     /**
      * Get weather info of a specific city by id
      *
-     * @return weather info of if
+     * @return weather info
      */
     @Query("SELECT * FROM weather WHERE id = :entryId")
     Weather getWeatherById(String entryId);
+
+    /**
+     * Get weather info of a specific city by city name
+     *
+     * @return weather info
+     */
+    @Query("SELECT * FROM weather WHERE city = :city")
+    Weather getWeatherByCity(String city);
+
+
 
     /**
      * Insert weather info into database. Replace if necessary
@@ -42,6 +52,9 @@ public interface WeatherDao {
 
     @Query("DELETE FROM weather WHERE id = :entryId")
     int deleteWeatherById(String entryId);
+
+    @Query("DELETE FROM weather")
+    void deleteAllWeather();
 
 
 }
