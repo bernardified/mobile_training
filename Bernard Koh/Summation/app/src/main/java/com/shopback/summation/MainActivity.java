@@ -1,9 +1,8 @@
 package com.shopback.summation;
 
-import android.os.Handler;
-import android.os.Looper;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -57,13 +56,13 @@ public class MainActivity extends AppCompatActivity {
         start = System.currentTimeMillis();
         final int numCores = Runtime.getRuntime().availableProcessors();
 
-        for (int i = 0; i< numCores; i++) {
+        for (int i = 0; i < numCores; i++) {
             final long chunkSize;
 
-            if (i == numCores-1) {
-                chunkSize = size/numCores + size%numCores;
+            if (i == numCores - 1) {
+                chunkSize = size / numCores + size % numCores;
             } else {
-                chunkSize = size/numCores;
+                chunkSize = size / numCores;
             }
 
             CalculationThreadPool.post(new Runnable() {
@@ -77,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Runnable updateUI(final long threadSum) {
-        return new  Runnable() {
+        return new Runnable() {
             public void run() {
                 end = System.currentTimeMillis();
                 timeTaken = end - start;
@@ -85,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
                 addToOverallSum(threadSum);
 
                 sumView.setText(((Long) total).toString());
-                timeTakenView.setText("Time taken: "+((Long) timeTaken).toString()+ "ms");
+                timeTakenView.setText("Time taken: " + ((Long) timeTaken).toString() + "ms");
             }
         };
     }

@@ -35,6 +35,40 @@
             ]
         },
         {
+            "outputFile": "/Users/shopback/Documents/ShopBack/mobile_training/Bernard Koh/Summation/app/build/intermediates/incremental/mergeDebugResources/merged.dir/values-v16/values-v16.xml",
+            "map": [
+                {
+                    "source": "/Users/shopback/.gradle/caches/transforms-1/files-1.1/support-compat-26.1.0.aar/140b498154439387e6532d9f6f4e524c/res/values-v16/values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "65",
+                        "endOffsets": "116"
+                    }
+                },
+                {
+                    "source": "/Users/shopback/.gradle/caches/transforms-1/files-1.1/appcompat-v7-26.1.0.aar/359adf1d35c1c551554b453956563acf/res/values-v16/values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "12",
+                        "endOffsets": "223"
+                    },
+                    "to": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "121",
+                        "endLines": "6",
+                        "endColumns": "12",
+                        "endOffsets": "289"
+                    }
+                }
+            ]
+        },
+        {
             "outputFile": "/Users/bernardkoh/iCloud_Drive_Archive/Documents/OneDrive/Documents/Work/ShopBack/mobile_training/Bernard Koh/Summation/app/build/intermediates/incremental/mergeDebugResources/merged.dir/values-v16/values-v16.xml",
             "map": [
                 {

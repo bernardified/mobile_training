@@ -1,6 +1,21 @@
 {
     "logs": [
         {
+            "outputFile": "/Users/shopback/Documents/ShopBack/mobile_training/Bernard Koh/Summation/app/build/intermediates/incremental/mergeDebugResources/merged.dir/values-ldltr-v21/values-ldltr-v21.xml",
+            "map": [
+                {
+                    "source": "/Users/shopback/.gradle/caches/transforms-1/files-1.1/appcompat-v7-26.1.0.aar/359adf1d35c1c551554b453956563acf/res/values-ldltr-v21/values-ldltr-v21.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "112",
+                        "endOffsets": "163"
+                    }
+                }
+            ]
+        },
+        {
             "outputFile": "/Users/bernardkoh/iCloud_Drive_Archive/Documents/OneDrive/Documents/Work/Summation/app/build/intermediates/incremental/mergeDebugResources/merged.dir/values-ldltr-v21/values-ldltr-v21.xml",
             "map": [
                 {
