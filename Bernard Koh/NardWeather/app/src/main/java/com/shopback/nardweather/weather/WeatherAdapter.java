@@ -249,9 +249,13 @@ public class WeatherAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
                 final int position = viewHolder.getAdapterPosition();
-                weatherPresenter.deleteCity(weather.get(position).getId());
+                weatherPresenter.deleteCity(weather.get(position).getCity());
                 weather.remove(position);
                 notifyItemRemoved(position);
+
+                if (weather.isEmpty()) {
+                    weatherPresenter.loadWeather(false);
+                }
             }
 
             @Override

@@ -152,17 +152,33 @@ public class WeatherFragment extends Fragment implements WeatherContract.View {
     }
 
     @Override
-    public void setLoadingIndicator(boolean active) {
+    public void setLoadingIndicator(final boolean active) {
+        if (getView() == null) {
+            return;
+        }
+        final SwipeRefreshLayout srl = getView().findViewById(R.id.swipeContainer);
 
+        srl.post(new Runnable() {
+            @Override
+            public void run() {
+                srl.setRefreshing(active);
+            }
+        });
     }
 
     @Override
     public void showWeather(List<Weather> weatherList) {
+        emptyTextView.setVisibility(View.INVISIBLE);
         weatherAdapter.replaceData(weatherList);
     }
 
     @Override
     public void showMessage(String message) {
-        Snackbar.make(getView(), message, Snackbar.LENGTH_LONG).show();
+        showNoWeather();
+     //   Snackbar.make(getView(), message, Snackbar.LENGTH_LONG).show();
+    }
+
+    public void showNoWeather() {
+        emptyTextView.setVisibility(View.VISIBLE);
     }
 }

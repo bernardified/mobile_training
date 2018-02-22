@@ -9,7 +9,7 @@
     <string name="city_name_example">Eg. Hanoi</string>
     <string name="city_name_example_two">Eg.New York</string>
     <string name="city_name_example_three">Eg. Paris, Fr</string>
-    <string name="empty_list">Tap on &quot;Add Cities&quot; to add your favourite city!</string>
+    <string name="empty_list">Tap on &quot; Add Cities &quot; to add your favourite city!</string>
     <string name="dialog_go">Go</string>
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_confirm">Confirm</string>

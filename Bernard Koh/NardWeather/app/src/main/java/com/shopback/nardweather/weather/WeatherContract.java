@@ -20,6 +20,8 @@ public interface WeatherContract {
 
         void showWeather(List<Weather> weatherList);
 
+        void showNoWeather();
+
         void showMessage(String Message);
 
     }

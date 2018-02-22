@@ -51,12 +51,20 @@ public class WeatherPresenter implements WeatherContract.Presenter {
                 if (showLoadingUI) {
                     weatherView.setLoadingIndicator(false);
                 }
+
+                if (weatherList.isEmpty()) {
+                    weatherView.showNoWeather();
+                } else {
                     weatherView.showWeather(weatherList);
+                }
             }
 
             @Override
             public void onDataNotAvailable() {
-                weatherView.showMessage("Error loading error from database");
+                if (showLoadingUI) {
+                    weatherView.setLoadingIndicator(false);
+                }
+                weatherView.showNoWeather();
                 Log.e("Weather Presenter", "error loading from database");
             }
         });
@@ -85,8 +93,8 @@ public class WeatherPresenter implements WeatherContract.Presenter {
     }
 
     @Override
-    public void deleteCity(String weatherId) {
-        weatherStorage.deleteWeather(weatherId);
+    public void deleteCity(String city) {
+        weatherStorage.deleteWeather(city);
     }
 
     @Override

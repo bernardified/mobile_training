@@ -104,8 +104,8 @@ public class WeatherStorage implements WeatherDataSource {
     }
 
     @Override
-    public void deleteWeather(String weatherId) {
-        localDataSource.deleteWeather(weatherId);
+    public void deleteWeather(String city) {
+        localDataSource.deleteWeather(city);
     }
 
     @Override
@@ -174,6 +174,7 @@ public class WeatherStorage implements WeatherDataSource {
 
                 @Override
                 public void onDataNotFetched() {
+
                 }
             });
         }

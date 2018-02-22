@@ -58,12 +58,10 @@ public class LocalWeatherDataSource implements WeatherDataSource {
     @Override
     public void getWeather(final String city, final FetchWeatherCallback callback) {
         Runnable getWeatherRunnable = new Runnable() {
-
             @Override
             public void run() {
                 final Weather weather = weatherDao.getWeatherByCity(city);
                 threadManager.mainThread().execute(new Runnable(){
-
                     @Override
                     public void run() {
                         if (weather != null) {
@@ -92,12 +90,12 @@ public class LocalWeatherDataSource implements WeatherDataSource {
     }
 
     @Override
-    public void deleteWeather(final String weatherId) {
+    public void deleteWeather(final String city) {
         Runnable deleteRunnable = new Runnable() {
 
             @Override
             public void run() {
-                weatherDao.deleteWeatherById(weatherId);
+                weatherDao.deleteWeather(city);
             }
         };
         threadManager.getDiskThreadPool().execute(deleteRunnable);

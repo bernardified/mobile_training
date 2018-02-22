@@ -21,13 +21,6 @@ public interface WeatherDao {
     @Query("SELECT * FROM weather")
     List<Weather> getAllWeather();
 
-    /**
-     * Get weather info of a specific city by id
-     *
-     * @return weather info
-     */
-    @Query("SELECT * FROM weather WHERE id = :entryId")
-    Weather getWeatherById(String entryId);
 
     /**
      * Get weather info of a specific city by city name
@@ -52,6 +45,9 @@ public interface WeatherDao {
 
     @Query("DELETE FROM weather WHERE id = :entryId")
     int deleteWeatherById(String entryId);
+
+    @Query("DELETE FROM weather WHERE city = :city")
+    int deleteWeather(String city);
 
     @Query("DELETE FROM weather")
     void deleteAllWeather();

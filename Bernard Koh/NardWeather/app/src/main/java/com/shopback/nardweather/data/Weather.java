@@ -17,11 +17,11 @@ public class Weather {
         NORMAL, OFFLINE
     }
 
-    @PrimaryKey
     @NonNull
     @ColumnInfo(name = "id")
     private final String id;
 
+    @PrimaryKey
     @NonNull
     @ColumnInfo(name = "city")
     private final String city;
